@@ -31,6 +31,10 @@ public class Category {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
+
     private String name;
 
     @Enumerated(EnumType.STRING)

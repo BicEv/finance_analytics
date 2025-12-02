@@ -13,6 +13,8 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
     List<Budget> findAllByUserId(Long userId);
 
+    List<Budget> findByUserIdAndMonth(Long userId, YearMonth month);
+
     Optional<Budget> findByIdAndUserId(UUID id, Long userId);
 
     Optional<Budget> findByUserIdAndCategoryIdAndMonth(Long userId, UUID categoryId, YearMonth month);
