@@ -23,7 +23,7 @@ import ru.bicev.finance_analytics.util.Frequency;
 @AllArgsConstructor
 @Data
 @Builder
-public class ReccuringTransaction {
+public class RecurringTransaction {
 
     @Id
     @GeneratedValue
