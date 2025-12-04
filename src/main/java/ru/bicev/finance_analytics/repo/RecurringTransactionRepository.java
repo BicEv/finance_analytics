@@ -15,7 +15,10 @@ public interface RecurringTransactionRepository extends JpaRepository<RecurringT
 
     List<RecurringTransaction> findAllByUserIdAndNextExecutionDateLessThanEqual(Long userId, LocalDate date);
 
-    List<RecurringTransaction> findByActiveAndNextExecutionDateLessThanEqual(boolean active, LocalDate date);
+    List<RecurringTransaction> findAllByActiveAndNextExecutionDateLessThanEqual(boolean active, LocalDate date);
+
+    List<RecurringTransaction> findAllByUserIdAndActiveAndNextExecutionDateGreaterThan(Long userId, boolean active,
+            LocalDate date);
 
     Optional<RecurringTransaction> findByIdAndUserId(UUID id, Long userId);
 
