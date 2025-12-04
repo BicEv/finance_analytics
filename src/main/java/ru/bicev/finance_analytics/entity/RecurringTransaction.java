@@ -54,4 +54,6 @@ public class RecurringTransaction {
 
     private boolean isActive;
 
+    private LocalDate lastExecutionDate;
+
 }

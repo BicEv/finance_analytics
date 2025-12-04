@@ -27,7 +27,8 @@ public class RecuringTransactionService {
     private final CategoryRepository categoryRepository;
     private final RecurringTransactionRepository recurringTransactionRepository;
 
-    public RecuringTransactionService(UserService userService, AccountRepository accountRepository,
+    public RecuringTransactionService(UserService userService,
+            AccountRepository accountRepository,
             CategoryRepository categoryRepository, RecurringTransactionRepository recurringTransactionRepository) {
         this.userService = userService;
         this.accountRepository = accountRepository;
@@ -122,6 +123,15 @@ public class RecuringTransactionService {
                 .findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
         recurringTransactionRepository.delete(transaction);
+    }
+
+    public List<RecurringTransaction> findAllActiveByNextExecutionDateBefore(LocalDate now) {
+        return recurringTransactionRepository.findByActiveAndNextExecutionDateLessThanEqual(true, now);
+    }
+
+    @Transactional
+    public RecurringTransaction save(RecurringTransaction transaction) {
+        return recurringTransactionRepository.save(transaction);
     }
 
     private User getCurrentUser() {

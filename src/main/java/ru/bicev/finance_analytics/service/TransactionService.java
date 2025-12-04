@@ -55,6 +55,25 @@ public class TransactionService {
         return transactionRepository.save(transaction);
     }
 
+    @Transactional
+    public Transaction createTransactionForUser(User user, TransactionRequest request) {
+        Account account = getAccount(request.accountId(), user.getId());
+        Category category = getCategory(request.categoryId(), user.getId());
+
+        Transaction transaction = Transaction.builder()
+                .user(user)
+                .account(account)
+                .category(category)
+                .date(request.date() != null ? request.date() : LocalDate.now())
+                .amount(request.amount().setScale(2, RoundingMode.HALF_UP))
+                .createdAt(LocalDateTime.now())
+                .description(request.description())
+                .isPlanned(request.isPlanned())
+                .build();
+
+        return transactionRepository.save(transaction);
+    }
+
     public List<Transaction> getTransactions() {
         return transactionRepository.findAllByUserId(getCurrentUserId());
     }
