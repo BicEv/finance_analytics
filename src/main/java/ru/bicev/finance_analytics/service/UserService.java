@@ -25,9 +25,6 @@ public class UserService {
     @Transactional
     public User getOrCreateOAuthUser(String provider, OAuth2User oAuth2User) {
         String providerId = extractProviderId(provider, oAuth2User);
-        String email = extractEmail(provider, oAuth2User);
-        String name = extractName(provider, oAuth2User);
-        String avatar = extractAvatar(provider, oAuth2User);
 
         Optional<User> existing = userRepository.findByProviderAndProviderId(provider, providerId);
 
@@ -36,6 +33,10 @@ public class UserService {
             u.setLastLoginAt(LocalDateTime.now());
             return userRepository.save(u);
         }
+
+        String email = extractEmail(provider, oAuth2User);
+        String name = extractName(provider, oAuth2User);
+        String avatar = extractAvatar(provider, oAuth2User);
 
         User newUser = User.builder()
                 .provider(provider)

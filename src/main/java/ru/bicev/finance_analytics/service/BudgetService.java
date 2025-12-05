@@ -1,5 +1,6 @@
 package ru.bicev.finance_analytics.service;
 
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -40,7 +41,7 @@ public class BudgetService {
                 .user(user)
                 .category(category)
                 .month(request.month())
-                .limitAmount(request.amount())
+                .limitAmount(request.amount().setScale(2, RoundingMode.HALF_UP))
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -66,7 +67,7 @@ public class BudgetService {
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
 
         budget.setMonth(request.month());
-        budget.setLimitAmount(request.amount());
+        budget.setLimitAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
         return budgetRepository.save(budget);
     }
 
