@@ -8,23 +8,27 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import ru.bicev.finance_analytics.entity.Transaction;
+import ru.bicev.finance_analytics.util.CategoryType;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
-    List<Transaction> findAllByUserId(Long userId);
+        List<Transaction> findAllByUserId(Long userId);
 
-    List<Transaction> findAllByUserIdAndAccountId(Long userId, UUID accountId);
+        List<Transaction> findAllByUserIdAndAccountId(Long userId, UUID accountId);
 
-    List<Transaction> findAllByUserIdAndCategoryId(Long userId, UUID categoryId);
+        List<Transaction> findAllByUserIdAndCategoryId(Long userId, UUID categoryId);
 
-    List<Transaction> findAllByUserIdAndCategoryIdAndDateBetween(Long userId, UUID categoryId, LocalDate start,
-            LocalDate end);
+        List<Transaction> findAllByUserIdAndCategoryIdAndDateBetween(Long userId, UUID categoryId, LocalDate start,
+                        LocalDate end);
 
-    List<Transaction> findAllByUserIdAndDateBetween(Long userId, LocalDate start, LocalDate end);
+        List<Transaction> findAllByUserIdAndDateBetween(Long userId, LocalDate start, LocalDate end);
 
-    List<Transaction> findAllByUserIdAndAccountIdAndDateBetween(Long userId, UUID accountId, LocalDate start,
-            LocalDate end);
+        List<Transaction> findAllByUserIdAndAccountIdAndDateBetween(Long userId, UUID accountId, LocalDate start,
+                        LocalDate end);
 
-    Optional<Transaction> findByIdAndUserId(UUID id, Long userId);
+        List<Transaction> findAllByUserIdAndAccountIdAndCategory_TypeAndDateBetween(Long userId, UUID accountId,
+                        CategoryType type, LocalDate start, LocalDate end);
+
+        Optional<Transaction> findByIdAndUserId(UUID id, Long userId);
 
 }
