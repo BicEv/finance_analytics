@@ -5,10 +5,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.bicev.finance_analytics.dto.RecurringTransactionDto;
 import ru.bicev.finance_analytics.dto.RecurringTransactionRequest;
 import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
@@ -20,14 +22,14 @@ import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
 
 @Service
-public class RecuringTransactionService {
+public class RecurringTransactionService {
 
     private final UserService userService;
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
     private final RecurringTransactionRepository recurringTransactionRepository;
 
-    public RecuringTransactionService(UserService userService,
+    public RecurringTransactionService(UserService userService,
             AccountRepository accountRepository,
             CategoryRepository categoryRepository, RecurringTransactionRepository recurringTransactionRepository) {
         this.userService = userService;
@@ -37,7 +39,7 @@ public class RecuringTransactionService {
     }
 
     @Transactional
-    public RecurringTransaction createTransaction(RecurringTransactionRequest request) {
+    public RecurringTransactionDto createTransaction(RecurringTransactionRequest request) {
         User user = getCurrentUser();
         Account account = getAccount(request.accountId(), user.getId());
         Category category = getCategory(request.categoryId(), user.getId());
@@ -58,29 +60,35 @@ public class RecuringTransactionService {
                 .nextExecutionDate(request.nextExecutionDate())
                 .build();
 
-        return recurringTransactionRepository.save(transaction);
+        return toDto(recurringTransactionRepository.save(transaction));
     }
 
-    public List<RecurringTransaction> getAllReccuringTransactions() {
+    public List<RecurringTransactionDto> getAllRecurringTransactions() {
         Long userId = getCurrentUserId();
 
-        return recurringTransactionRepository.findAllByUserId(userId);
+        return recurringTransactionRepository.findAllByUserId(userId).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public List<RecurringTransaction> getAllReccuringTransactionsAndDate(LocalDate date) {
+    public List<RecurringTransactionDto> getAllRecurringTransactionsAndDate(LocalDate date) {
         Long userId = getCurrentUserId();
 
-        return recurringTransactionRepository.findAllByUserIdAndNextExecutionDateLessThanEqual(userId, date);
+        return recurringTransactionRepository.findAllByUserIdAndNextExecutionDateLessThanEqual(userId, date).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public RecurringTransaction getTransactionById(UUID transactionId) {
+    public RecurringTransactionDto getTransactionById(UUID transactionId) {
 
-        return recurringTransactionRepository.findByIdAndUserId(transactionId, getCurrentUserId())
+        RecurringTransaction transaction = recurringTransactionRepository
+                .findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
+        return toDto(transaction);
     }
 
     @Transactional
-    public RecurringTransaction updateTransaction(UUID transactionId, RecurringTransactionRequest request) {
+    public RecurringTransactionDto updateTransaction(UUID transactionId, RecurringTransactionRequest request) {
         Long userId = getCurrentUserId();
         RecurringTransaction transaction = recurringTransactionRepository
                 .findByIdAndUserId(transactionId, userId)
@@ -114,7 +122,7 @@ public class RecuringTransactionService {
 
         transaction.setActive(request.isActive());
 
-        return recurringTransactionRepository.save(transaction);
+        return toDto(recurringTransactionRepository.save(transaction));
     }
 
     @Transactional
@@ -150,6 +158,19 @@ public class RecuringTransactionService {
     private Category getCategory(UUID categoryId, Long userId) {
         return categoryRepository.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
+    }
+
+    private RecurringTransactionDto toDto(RecurringTransaction transaction) {
+        return new RecurringTransactionDto(
+                transaction.getId(),
+                transaction.getCategory().getId(),
+                transaction.getCategory().getName(),
+                transaction.getAccount().getId(),
+                transaction.getAmount(),
+                transaction.getFrequency().name(),
+                transaction.getDescription(),
+                transaction.getNextExecutionDate(),
+                transaction.isActive());
     }
 
 }
