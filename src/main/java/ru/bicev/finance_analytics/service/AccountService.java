@@ -3,10 +3,12 @@ package ru.bicev.finance_analytics.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.bicev.finance_analytics.dto.AccountDto;
 import ru.bicev.finance_analytics.dto.CreateAccountRequest;
 import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.User;
@@ -24,13 +26,13 @@ public class AccountService {
         this.userService = userService;
     }
 
-    public List<Account> getUserAccounts() {
+    public List<AccountDto> getUserAccounts() {
         Long userId = getCurrentUser().getId();
-        return accountRepository.findAllByUserId(userId);
+        return accountRepository.findAllByUserId(userId).stream().map(this::toDto).collect(Collectors.toList());
     }
 
     @Transactional
-    public Account createAccount(CreateAccountRequest request) {
+    public AccountDto createAccount(CreateAccountRequest request) {
         Account account = Account.builder()
                 .user(getCurrentUser())
                 .name(request.name())
@@ -38,20 +40,21 @@ public class AccountService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return accountRepository.save(account);
+        return toDto(accountRepository.save(account));
     }
 
-    public Account getAccountById(UUID accountId) {
-        return accountRepository.findByIdAndUserId(accountId, getCurrentUser().getId())
+    public AccountDto getAccountById(UUID accountId) {
+        Account acc = accountRepository.findByIdAndUserId(accountId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Account not found"));
+        return toDto(acc);
     }
 
     @Transactional
-    public Account updateAccount(UUID accountId, String name) {
+    public AccountDto updateAccount(UUID accountId, String name) {
         Account account = accountRepository.findByIdAndUserId(accountId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Account not found"));
         account.setName(name);
-        return accountRepository.save(account);
+        return toDto(accountRepository.save(account));
     }
 
     @Transactional
@@ -63,6 +66,10 @@ public class AccountService {
 
     private User getCurrentUser() {
         return userService.getCurrentUser();
+    }
+
+    private AccountDto toDto(Account account) {
+        return new AccountDto(account.getId(), account.getName(), account.getCurrency());
     }
 
 }

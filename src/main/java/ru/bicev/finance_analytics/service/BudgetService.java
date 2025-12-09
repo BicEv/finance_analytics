@@ -5,10 +5,12 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.bicev.finance_analytics.dto.BudgetDto;
 import ru.bicev.finance_analytics.dto.BudgetRequest;
 import ru.bicev.finance_analytics.entity.Budget;
 import ru.bicev.finance_analytics.entity.Category;
@@ -32,7 +34,7 @@ public class BudgetService {
     }
 
     @Transactional
-    public Budget createBudget(BudgetRequest request) {
+    public BudgetDto createBudget(BudgetRequest request) {
         User user = getCurrentUser();
         Category category = categoryRepository.findByIdAndUserId(request.categoryId(), user.getId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
@@ -45,30 +47,35 @@ public class BudgetService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return budgetRepository.save(budget);
+        return toDto(budgetRepository.save(budget));
     }
 
-    public Budget getBudgetById(UUID budgetId) {
-        return budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
+    public BudgetDto getBudgetById(UUID budgetId) {
+        Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
+        return toDto(budget);
     }
 
-    public List<Budget> getAllBudgetsForUser() {
-        return budgetRepository.findAllByUserId(getCurrentUser().getId());
+    public List<BudgetDto> getAllBudgetsForUser() {
+        return budgetRepository.findAllByUserId(getCurrentUser().getId()).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public List<Budget> getBudgetsForMonth(YearMonth month) {
-        return budgetRepository.findByUserIdAndMonth(getCurrentUser().getId(), month);
+    public List<BudgetDto> getBudgetsForMonth(YearMonth month) {
+        return budgetRepository.findByUserIdAndMonth(getCurrentUser().getId(), month).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public Budget updateBudget(UUID budgetId, BudgetRequest request) {
+    public BudgetDto updateBudget(UUID budgetId, BudgetRequest request) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
 
         budget.setMonth(request.month());
         budget.setLimitAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
-        return budgetRepository.save(budget);
+        return toDto(budgetRepository.save(budget));
     }
 
     @Transactional
@@ -80,6 +87,15 @@ public class BudgetService {
 
     private User getCurrentUser() {
         return userService.getCurrentUser();
+    }
+
+    private BudgetDto toDto(Budget budget) {
+        return new BudgetDto(
+                budget.getId(),
+                budget.getCategory().getId(),
+                budget.getCategory().getName(),
+                budget.getMonth(),
+                budget.getLimitAmount());
     }
 
 }

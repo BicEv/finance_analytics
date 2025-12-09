@@ -25,7 +25,7 @@ import ru.bicev.finance_analytics.repo.AccountRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.UserRepository;
 import ru.bicev.finance_analytics.service.RecurringExecutionService;
-import ru.bicev.finance_analytics.service.RecuringTransactionService;
+import ru.bicev.finance_analytics.service.RecurringTransactionService;
 import ru.bicev.finance_analytics.service.TransactionService;
 import ru.bicev.finance_analytics.util.Frequency;
 
@@ -36,7 +36,7 @@ public class RecurringExecutionServiceTest {
     private TransactionService transactionService;
 
     @Mock
-    private RecuringTransactionService recuringTransactionService;
+    private RecurringTransactionService recuringTransactionService;
 
     @Mock
     private UserRepository userRepository;

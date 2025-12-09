@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import ru.bicev.finance_analytics.dto.RecurringTransactionDto;
 import ru.bicev.finance_analytics.dto.RecurringTransactionRequest;
 import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
@@ -25,196 +26,197 @@ import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.AccountRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
-import ru.bicev.finance_analytics.service.RecuringTransactionService;
+import ru.bicev.finance_analytics.service.RecurringTransactionService;
 import ru.bicev.finance_analytics.service.UserService;
 import ru.bicev.finance_analytics.util.Frequency;
 
 @ExtendWith(MockitoExtension.class)
 public class RecuringTransactionServiceTest {
 
-    @Mock
-    private UserService userService;
+        @Mock
+        private UserService userService;
 
-    @Mock
-    private AccountRepository accountRepository;
+        @Mock
+        private AccountRepository accountRepository;
 
-    @Mock
-    private CategoryRepository categoryRepository;
+        @Mock
+        private CategoryRepository categoryRepository;
 
-    @Mock
-    private RecurringTransactionRepository recurringTransactionRepository;
+        @Mock
+        private RecurringTransactionRepository recurringTransactionRepository;
 
-    @InjectMocks
-    private RecuringTransactionService service;
+        @InjectMocks
+        private RecurringTransactionService service;
 
-    private User user;
-    private Account account;
-    private Category category;
+        private User user;
+        private Account account;
+        private Category category;
 
-    @BeforeEach
-    void init() {
-        user = User.builder().id(1L).email("test@mail.com").build();
-        account = Account.builder().id(UUID.randomUUID()).user(user).name("Main").build();
-        category = Category.builder().id(UUID.randomUUID()).user(user).name("Food").build();
+        @BeforeEach
+        void init() {
+                user = User.builder().id(1L).email("test@mail.com").build();
+                account = Account.builder().id(UUID.randomUUID()).user(user).name("Main").build();
+                category = Category.builder().id(UUID.randomUUID()).user(user).name("Food").build();
 
-        when(userService.getCurrentUser()).thenReturn(user);
-    }
+                when(userService.getCurrentUser()).thenReturn(user);
+        }
 
-    // --------------------------------------------------------
-    // createTransaction()
-    // --------------------------------------------------------
-    @Test
-    void testCreateTransaction_success() {
-        LocalDate next = LocalDate.now().plusDays(2);
+        // --------------------------------------------------------
+        // createTransaction()
+        // --------------------------------------------------------
+        @Test
+        void testCreateTransaction_success() {
+                LocalDate next = LocalDate.now().plusDays(2);
 
-        RecurringTransactionRequest request = new RecurringTransactionRequest(
-                account.getId(),         // accountId
-                category.getId(),        // categoryId
-                new BigDecimal("9.99"),  // amount
-                Frequency.MONTHLY,       // frequency
-                next,                    // nextExecutionDate
-                "Netflix",               // description
-                true                     // isActive
-        );
+                RecurringTransactionRequest request = new RecurringTransactionRequest(
+                                account.getId(), // accountId
+                                category.getId(), // categoryId
+                                new BigDecimal("9.99"), // amount
+                                Frequency.MONTHLY, // frequency
+                                next, // nextExecutionDate
+                                "Netflix", // description
+                                true // isActive
+                );
 
-        when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
-                .thenReturn(Optional.of(account));
-        when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
-                .thenReturn(Optional.of(category));
-        when(recurringTransactionRepository.save(any()))
-                .thenAnswer(inv -> inv.getArgument(0));
+                when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
+                                .thenReturn(Optional.of(account));
+                when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
+                                .thenReturn(Optional.of(category));
+                when(recurringTransactionRepository.save(any()))
+                                .thenAnswer(inv -> inv.getArgument(0));
 
-        ArgumentCaptor<RecurringTransaction> captor = ArgumentCaptor.forClass(RecurringTransaction.class);
+                ArgumentCaptor<RecurringTransaction> captor = ArgumentCaptor.forClass(RecurringTransaction.class);
 
-        RecurringTransaction result = service.createTransaction(request);
+                RecurringTransactionDto result = service.createTransaction(request);
 
-        verify(recurringTransactionRepository).save(captor.capture());
-        RecurringTransaction saved = captor.getValue();
+                verify(recurringTransactionRepository).save(captor.capture());
+                RecurringTransaction saved = captor.getValue();
 
-        assertEquals("Netflix", saved.getDescription());
-        assertEquals(new BigDecimal("9.99").setScale(2), saved.getAmount());
-        assertEquals(Frequency.MONTHLY, saved.getFrequency());
-        assertTrue(saved.isActive());
-        assertEquals(next, saved.getNextExecutionDate());
-        assertNotNull(saved.getCreatedAt());
-        assertEquals(account, saved.getAccount());
-        assertEquals(category, saved.getCategory());
-    }
+                assertEquals("Netflix", saved.getDescription());
+                assertEquals(new BigDecimal("9.99").setScale(2), saved.getAmount());
+                assertEquals(Frequency.MONTHLY, saved.getFrequency());
+                assertTrue(saved.isActive());
+                assertEquals(next, saved.getNextExecutionDate());
+                assertNotNull(saved.getCreatedAt());
+                assertEquals(account, saved.getAccount());
+                assertEquals(category, saved.getCategory());
+        }
 
-    @Test
-    void testCreateTransaction_accountNotFound() {
-        RecurringTransactionRequest request = new RecurringTransactionRequest(
-                UUID.randomUUID(),
-                category.getId(),
-                BigDecimal.TEN,
-                Frequency.MONTHLY,
-                LocalDate.now().plusDays(1),
-                "Desc",
-                true
-        );
+        @Test
+        void testCreateTransaction_accountNotFound() {
+                RecurringTransactionRequest request = new RecurringTransactionRequest(
+                                UUID.randomUUID(),
+                                category.getId(),
+                                BigDecimal.TEN,
+                                Frequency.MONTHLY,
+                                LocalDate.now().plusDays(1),
+                                "Desc",
+                                true);
 
-        when(accountRepository.findByIdAndUserId(request.accountId(), user.getId()))
-                .thenReturn(Optional.empty());
+                when(accountRepository.findByIdAndUserId(request.accountId(), user.getId()))
+                                .thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
-                () -> service.createTransaction(request));
-    }
+                assertThrows(NotFoundException.class,
+                                () -> service.createTransaction(request));
+        }
 
-    @Test
-    void testCreateTransaction_categoryNotFound() {
-        RecurringTransactionRequest request = new RecurringTransactionRequest(
-                account.getId(),
-                UUID.randomUUID(),
-                BigDecimal.TEN,
-                Frequency.WEEKLY,
-                LocalDate.now().plusDays(1),
-                "Desc",
-                true
-        );
+        @Test
+        void testCreateTransaction_categoryNotFound() {
+                RecurringTransactionRequest request = new RecurringTransactionRequest(
+                                account.getId(),
+                                UUID.randomUUID(),
+                                BigDecimal.TEN,
+                                Frequency.WEEKLY,
+                                LocalDate.now().plusDays(1),
+                                "Desc",
+                                true);
 
-        when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
-                .thenReturn(Optional.of(account));
-        when(categoryRepository.findByIdAndUserId(request.categoryId(), user.getId()))
-                .thenReturn(Optional.empty());
+                when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
+                                .thenReturn(Optional.of(account));
+                when(categoryRepository.findByIdAndUserId(request.categoryId(), user.getId()))
+                                .thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
-                () -> service.createTransaction(request));
-    }
+                assertThrows(NotFoundException.class,
+                                () -> service.createTransaction(request));
+        }
 
-    @Test
-    void testCreateTransaction_nextExecutionDateBeforeNow() {
-        RecurringTransactionRequest request = new RecurringTransactionRequest(
-                account.getId(),
-                category.getId(),
-                BigDecimal.TEN,
-                Frequency.WEEKLY,
-                LocalDate.now().minusDays(1),
-                "Desc",
-                true
-        );
+        @Test
+        void testCreateTransaction_nextExecutionDateBeforeNow() {
+                RecurringTransactionRequest request = new RecurringTransactionRequest(
+                                account.getId(),
+                                category.getId(),
+                                BigDecimal.TEN,
+                                Frequency.WEEKLY,
+                                LocalDate.now().minusDays(1),
+                                "Desc",
+                                true);
 
-        when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
-                .thenReturn(Optional.of(account));
-        when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
-                .thenReturn(Optional.of(category));
+                when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
+                                .thenReturn(Optional.of(account));
+                when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
+                                .thenReturn(Optional.of(category));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> service.createTransaction(request));
-    }
+                assertThrows(IllegalArgumentException.class,
+                                () -> service.createTransaction(request));
+        }
 
-    // --------------------------------------------------------
-    // getTransactionById()
-    // --------------------------------------------------------
-    @Test
-    void testGetTransactionById_success() {
-        UUID id = UUID.randomUUID();
-        RecurringTransaction transaction = RecurringTransaction.builder()
-                .id(id)
-                .user(user)
-                .build();
+        // --------------------------------------------------------
+        // getTransactionById()
+        // --------------------------------------------------------
+        @Test
+        void testGetTransactionById_success() {
+                UUID id = UUID.randomUUID();
+                RecurringTransaction transaction = RecurringTransaction.builder()
+                                .id(id)
+                                .user(user)
+                                .category(category)
+                                .account(account)
+                                .frequency(Frequency.MONTHLY)
+                                .build();
 
-        when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
-                .thenReturn(Optional.of(transaction));
+                when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
+                                .thenReturn(Optional.of(transaction));
 
-        RecurringTransaction result = service.getTransactionById(id);
+                RecurringTransactionDto result = service.getTransactionById(id);
 
-        assertEquals(id, result.getId());
-    }
+                assertEquals(id, result.id());
+                assertEquals(transaction.getAmount(), result.amount());
+        }
 
-    @Test
-    void testGetTransactionById_notFound() {
-        UUID id = UUID.randomUUID();
+        @Test
+        void testGetTransactionById_notFound() {
+                UUID id = UUID.randomUUID();
 
-        when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
-                .thenReturn(Optional.empty());
+                when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
+                                .thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
-                () -> service.getTransactionById(id));
-    }
+                assertThrows(NotFoundException.class,
+                                () -> service.getTransactionById(id));
+        }
 
-    // --------------------------------------------------------
-    // deleteTransaction()
-    // --------------------------------------------------------
-    @Test
-    void testDeleteTransaction_success() {
-        UUID id = UUID.randomUUID();
-        RecurringTransaction transaction = RecurringTransaction.builder().id(id).user(user).build();
+        // --------------------------------------------------------
+        // deleteTransaction()
+        // --------------------------------------------------------
+        @Test
+        void testDeleteTransaction_success() {
+                UUID id = UUID.randomUUID();
+                RecurringTransaction transaction = RecurringTransaction.builder().id(id).user(user).build();
 
-        when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
-                .thenReturn(Optional.of(transaction));
+                when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
+                                .thenReturn(Optional.of(transaction));
 
-        service.deleteTransaction(id);
+                service.deleteTransaction(id);
 
-        verify(recurringTransactionRepository).delete(transaction);
-    }
+                verify(recurringTransactionRepository).delete(transaction);
+        }
 
-    @Test
-    void testDeleteTransaction_notFound() {
-        UUID id = UUID.randomUUID();
-        when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
-                .thenReturn(Optional.empty());
+        @Test
+        void testDeleteTransaction_notFound() {
+                UUID id = UUID.randomUUID();
+                when(recurringTransactionRepository.findByIdAndUserId(id, user.getId()))
+                                .thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
-                () -> service.deleteTransaction(id));
-    }
+                assertThrows(NotFoundException.class,
+                                () -> service.deleteTransaction(id));
+        }
 }

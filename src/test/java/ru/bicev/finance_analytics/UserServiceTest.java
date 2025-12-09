@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.AfterEach;
@@ -124,7 +125,7 @@ public class UserServiceTest {
     @Test
     void testGetCurrentUser_success() {
         User user = User.builder().id(10L).email(email).build();
-        CustomUserPrincipal principal = new CustomUserPrincipal(user);
+        CustomUserPrincipal principal = new CustomUserPrincipal(user, Map.of());
 
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn(principal);

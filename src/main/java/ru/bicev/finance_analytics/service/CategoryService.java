@@ -3,10 +3,12 @@ package ru.bicev.finance_analytics.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.bicev.finance_analytics.dto.CategoryDto;
 import ru.bicev.finance_analytics.dto.CategoryRequest;
 import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
@@ -31,7 +33,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category createCategory(CategoryRequest request) {
+    public CategoryDto createCategory(CategoryRequest request) {
         User user = getCurrentUser();
 
         Account account = accountRepository.findByIdAndUserId(request.accountId(), user.getId())
@@ -46,32 +48,37 @@ public class CategoryService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return categoryRepository.save(category);
+        return toDto(categoryRepository.save(category));
 
     }
 
-    public List<Category> getUserCategories(UUID accountId) {
+    public List<CategoryDto> getUserCategories(UUID accountId) {
         Long userId = getUserId();
         if (accountId == null) {
-            return categoryRepository.findAllByUserId(userId);
+            return categoryRepository.findAllByUserId(userId).stream()
+                    .map(this::toDto)
+                    .collect(Collectors.toList());
         }
-        return categoryRepository.findAllByUserIdAndAccountId(userId, accountId);
+        return categoryRepository.findAllByUserIdAndAccountId(userId, accountId).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public Category getCategoryById(UUID categoryId) {
-        return categoryRepository.findByIdAndUserId(categoryId, getUserId())
+    public CategoryDto getCategoryById(UUID categoryId) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
+        return toDto(category);
     }
 
     @Transactional
-    public Category updateCategory(UUID categoryId, CategoryRequest request) {
+    public CategoryDto updateCategory(UUID categoryId, CategoryRequest request) {
         Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
 
         category.setName(request.name());
         category.setColor(request.color());
 
-        return categoryRepository.save(category);
+        return toDto(categoryRepository.save(category));
     }
 
     @Transactional
@@ -82,8 +89,16 @@ public class CategoryService {
         categoryRepository.delete(category);
     }
 
-    public List<Category> getCategoriesByType(CategoryType type) {
-        return categoryRepository.findAllByUserIdAndType(getUserId(), type);
+    public List<CategoryDto> getCategoriesByType(CategoryType type) {
+        return categoryRepository.findAllByUserIdAndType(getUserId(), type).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<CategoryDto> getAllCategoriesForUser() {
+        return categoryRepository.findAllByUserId(getUserId()).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     private Long getUserId() {
@@ -92,6 +107,16 @@ public class CategoryService {
 
     private User getCurrentUser() {
         return userService.getCurrentUser();
+    }
+
+    private CategoryDto toDto(Category category) {
+        return new CategoryDto(
+                category.getId(),
+                category.getAccount().getId(),
+                category.getAccount().getName(),
+                category.getName(),
+                category.getType().name(),
+                category.getColor());
     }
 
 }

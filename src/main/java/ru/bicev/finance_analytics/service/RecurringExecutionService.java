@@ -21,13 +21,13 @@ import ru.bicev.finance_analytics.util.Frequency;
 public class RecurringExecutionService {
 
     private final TransactionService transactionService;
-    private final RecuringTransactionService recuringTransactionService;
+    private final RecurringTransactionService recuringTransactionService;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
 
     public RecurringExecutionService(TransactionService transactionService,
-            RecuringTransactionService recuringTransactionService, UserRepository userRepository,
+            RecurringTransactionService recuringTransactionService, UserRepository userRepository,
             AccountRepository accountRepository, CategoryRepository categoryRepository) {
         this.transactionService = transactionService;
         this.recuringTransactionService = recuringTransactionService;
