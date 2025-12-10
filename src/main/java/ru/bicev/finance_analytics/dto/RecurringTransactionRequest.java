@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import ru.bicev.finance_analytics.util.Frequency;
 
-public record RecurringTransactionRequest(UUID accountId, UUID categoryId, BigDecimal amount, Frequency frequency,
+public record RecurringTransactionRequest(UUID categoryId, BigDecimal amount, Frequency frequency,
         LocalDate nextExecutionDate, String description, boolean isActive) {
 
 }

@@ -43,12 +43,9 @@ public class CategoryRestController {
 
     @GetMapping
     public ResponseEntity<List<CategoryDto>> getCategories(
-            @RequestParam(required = false) UUID accountId,
             @RequestParam(required = false) CategoryType type) {
         List<CategoryDto> categories;
-        if (accountId != null) {
-            categories = categoryService.getUserCategories(accountId);
-        } else if (type != null) {
+        if (type != null) {
             categories = categoryService.getCategoriesByType(type);
         } else {
             categories = categoryService.getAllCategoriesForUser();

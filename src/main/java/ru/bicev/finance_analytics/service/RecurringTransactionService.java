@@ -12,12 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ru.bicev.finance_analytics.dto.RecurringTransactionDto;
 import ru.bicev.finance_analytics.dto.RecurringTransactionRequest;
-import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.RecurringTransaction;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
-import ru.bicev.finance_analytics.repo.AccountRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
 
@@ -25,15 +23,12 @@ import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
 public class RecurringTransactionService {
 
     private final UserService userService;
-    private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
     private final RecurringTransactionRepository recurringTransactionRepository;
 
     public RecurringTransactionService(UserService userService,
-            AccountRepository accountRepository,
             CategoryRepository categoryRepository, RecurringTransactionRepository recurringTransactionRepository) {
         this.userService = userService;
-        this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
         this.recurringTransactionRepository = recurringTransactionRepository;
     }
@@ -41,7 +36,6 @@ public class RecurringTransactionService {
     @Transactional
     public RecurringTransactionDto createTransaction(RecurringTransactionRequest request) {
         User user = getCurrentUser();
-        Account account = getAccount(request.accountId(), user.getId());
         Category category = getCategory(request.categoryId(), user.getId());
 
         if (request.nextExecutionDate().isBefore(LocalDate.now())) {
@@ -50,7 +44,6 @@ public class RecurringTransactionService {
 
         RecurringTransaction transaction = RecurringTransaction.builder()
                 .user(user)
-                .account(account)
                 .category(category)
                 .description(request.description())
                 .createdAt(LocalDateTime.now())
@@ -93,10 +86,6 @@ public class RecurringTransactionService {
         RecurringTransaction transaction = recurringTransactionRepository
                 .findByIdAndUserId(transactionId, userId)
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
-
-        if (request.accountId() != null) {
-            transaction.setAccount(getAccount(request.accountId(), userId));
-        }
 
         if (request.categoryId() != null) {
             transaction.setCategory(getCategory(request.categoryId(), userId));
@@ -150,11 +139,6 @@ public class RecurringTransactionService {
         return userService.getCurrentUser().getId();
     }
 
-    private Account getAccount(UUID accountId, Long userId) {
-        return accountRepository.findByIdAndUserId(accountId, userId)
-                .orElseThrow(() -> new NotFoundException("Account not found"));
-    }
-
     private Category getCategory(UUID categoryId, Long userId) {
         return categoryRepository.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
@@ -165,7 +149,6 @@ public class RecurringTransactionService {
                 transaction.getId(),
                 transaction.getCategory().getId(),
                 transaction.getCategory().getName(),
-                transaction.getAccount().getId(),
                 transaction.getAmount(),
                 transaction.getFrequency().name(),
                 transaction.getDescription(),

@@ -18,12 +18,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import ru.bicev.finance_analytics.dto.RecurringTransactionDto;
 import ru.bicev.finance_analytics.dto.RecurringTransactionRequest;
-import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.RecurringTransaction;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
-import ru.bicev.finance_analytics.repo.AccountRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
 import ru.bicev.finance_analytics.service.RecurringTransactionService;
@@ -36,8 +34,6 @@ public class RecuringTransactionServiceTest {
         @Mock
         private UserService userService;
 
-        @Mock
-        private AccountRepository accountRepository;
 
         @Mock
         private CategoryRepository categoryRepository;
@@ -49,13 +45,11 @@ public class RecuringTransactionServiceTest {
         private RecurringTransactionService service;
 
         private User user;
-        private Account account;
         private Category category;
 
         @BeforeEach
         void init() {
                 user = User.builder().id(1L).email("test@mail.com").build();
-                account = Account.builder().id(UUID.randomUUID()).user(user).name("Main").build();
                 category = Category.builder().id(UUID.randomUUID()).user(user).name("Food").build();
 
                 when(userService.getCurrentUser()).thenReturn(user);
@@ -69,7 +63,6 @@ public class RecuringTransactionServiceTest {
                 LocalDate next = LocalDate.now().plusDays(2);
 
                 RecurringTransactionRequest request = new RecurringTransactionRequest(
-                                account.getId(), // accountId
                                 category.getId(), // categoryId
                                 new BigDecimal("9.99"), // amount
                                 Frequency.MONTHLY, // frequency
@@ -78,8 +71,7 @@ public class RecuringTransactionServiceTest {
                                 true // isActive
                 );
 
-                when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
-                                .thenReturn(Optional.of(account));
+                
                 when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
                                 .thenReturn(Optional.of(category));
                 when(recurringTransactionRepository.save(any()))
@@ -98,32 +90,13 @@ public class RecuringTransactionServiceTest {
                 assertTrue(saved.isActive());
                 assertEquals(next, saved.getNextExecutionDate());
                 assertNotNull(saved.getCreatedAt());
-                assertEquals(account, saved.getAccount());
                 assertEquals(category, saved.getCategory());
         }
 
-        @Test
-        void testCreateTransaction_accountNotFound() {
-                RecurringTransactionRequest request = new RecurringTransactionRequest(
-                                UUID.randomUUID(),
-                                category.getId(),
-                                BigDecimal.TEN,
-                                Frequency.MONTHLY,
-                                LocalDate.now().plusDays(1),
-                                "Desc",
-                                true);
-
-                when(accountRepository.findByIdAndUserId(request.accountId(), user.getId()))
-                                .thenReturn(Optional.empty());
-
-                assertThrows(NotFoundException.class,
-                                () -> service.createTransaction(request));
-        }
 
         @Test
         void testCreateTransaction_categoryNotFound() {
                 RecurringTransactionRequest request = new RecurringTransactionRequest(
-                                account.getId(),
                                 UUID.randomUUID(),
                                 BigDecimal.TEN,
                                 Frequency.WEEKLY,
@@ -131,8 +104,7 @@ public class RecuringTransactionServiceTest {
                                 "Desc",
                                 true);
 
-                when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
-                                .thenReturn(Optional.of(account));
+                
                 when(categoryRepository.findByIdAndUserId(request.categoryId(), user.getId()))
                                 .thenReturn(Optional.empty());
 
@@ -143,7 +115,6 @@ public class RecuringTransactionServiceTest {
         @Test
         void testCreateTransaction_nextExecutionDateBeforeNow() {
                 RecurringTransactionRequest request = new RecurringTransactionRequest(
-                                account.getId(),
                                 category.getId(),
                                 BigDecimal.TEN,
                                 Frequency.WEEKLY,
@@ -151,8 +122,7 @@ public class RecuringTransactionServiceTest {
                                 "Desc",
                                 true);
 
-                when(accountRepository.findByIdAndUserId(account.getId(), user.getId()))
-                                .thenReturn(Optional.of(account));
+               
                 when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
                                 .thenReturn(Optional.of(category));
 
@@ -170,7 +140,6 @@ public class RecuringTransactionServiceTest {
                                 .id(id)
                                 .user(user)
                                 .category(category)
-                                .account(account)
                                 .frequency(Frequency.MONTHLY)
                                 .build();
 

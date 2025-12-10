@@ -10,11 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ru.bicev.finance_analytics.dto.CategoryDto;
 import ru.bicev.finance_analytics.dto.CategoryRequest;
-import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
-import ru.bicev.finance_analytics.repo.AccountRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.util.CategoryType;
 
@@ -23,25 +21,18 @@ public class CategoryService {
 
     private final UserService userService;
     private final CategoryRepository categoryRepository;
-    private final AccountRepository accountRepository;
 
-    public CategoryService(UserService userService, CategoryRepository categoryRepository,
-            AccountRepository accountRepository) {
+    public CategoryService(UserService userService, CategoryRepository categoryRepository) {
         this.userService = userService;
         this.categoryRepository = categoryRepository;
-        this.accountRepository = accountRepository;
     }
 
     @Transactional
     public CategoryDto createCategory(CategoryRequest request) {
         User user = getCurrentUser();
 
-        Account account = accountRepository.findByIdAndUserId(request.accountId(), user.getId())
-                .orElseThrow(() -> new NotFoundException("Account not found"));
-
         Category category = Category.builder()
                 .user(user)
-                .account(account)
                 .name(request.name())
                 .type(request.type())
                 .color(request.color())
@@ -52,14 +43,11 @@ public class CategoryService {
 
     }
 
-    public List<CategoryDto> getUserCategories(UUID accountId) {
+    public List<CategoryDto> getUserCategories() {
         Long userId = getUserId();
-        if (accountId == null) {
-            return categoryRepository.findAllByUserId(userId).stream()
-                    .map(this::toDto)
-                    .collect(Collectors.toList());
-        }
-        return categoryRepository.findAllByUserIdAndAccountId(userId, accountId).stream()
+
+        return categoryRepository.findAllByUserId(userId)
+                .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
@@ -112,8 +100,6 @@ public class CategoryService {
     private CategoryDto toDto(Category category) {
         return new CategoryDto(
                 category.getId(),
-                category.getAccount().getId(),
-                category.getAccount().getName(),
                 category.getName(),
                 category.getType().name(),
                 category.getColor());

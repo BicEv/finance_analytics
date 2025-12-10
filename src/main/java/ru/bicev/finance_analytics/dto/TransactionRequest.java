@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-public record TransactionRequest(UUID accountId, UUID categoryId, BigDecimal amount, LocalDate date, String description,
+public record TransactionRequest(UUID categoryId, BigDecimal amount, LocalDate date, String description,
         boolean isPlanned) {
 
 }

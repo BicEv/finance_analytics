@@ -44,7 +44,7 @@ public class AnalyticsService {
          * Траты по категориям за период
          */
         public Map<String, BigDecimal> getExpensesByCategory(UUID accountId, YearMonth month) {
-                List<Transaction> transactions = getExpensesForAccountAndMonth(accountId, month);
+                List<Transaction> transactions = getExpensesAndMonth(month);
 
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
@@ -68,29 +68,10 @@ public class AnalyticsService {
         }
 
         /**
-         * Траты по аккаунтам
-         */
-        public Map<String, BigDecimal> getExpensesByAccount(YearMonth month) {
-                Long userId = getCurrentUserId();
-                List<Transaction> transactions = transactionRepository.findAllByUserIdAndDateBetween(userId,
-                                month.atDay(1),
-                                month.atEndOfMonth());
-
-                return transactions.stream()
-                                .filter(t -> t.getCategory().getType() == CategoryType.EXPENSE)
-                                .collect(Collectors.groupingBy(
-                                                t -> t.getAccount().getName(),
-                                                Collectors.mapping(Transaction::getAmount,
-                                                                Collectors.reducing(BigDecimal.ZERO.setScale(2),
-                                                                                BigDecimal::add))));
-
-        }
-
-        /**
          * Траты по дням (для графиков)
          */
         public Map<LocalDate, BigDecimal> getDailyExpenses(UUID accountId, YearMonth month) {
-                List<Transaction> transactions = getExpensesForAccountAndMonth(accountId, month);
+                List<Transaction> transactions = getExpensesAndMonth(month);
 
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
@@ -109,8 +90,8 @@ public class AnalyticsService {
 
                 }
                 List<Transaction> transactions = transactionRepository
-                                .findAllByUserIdAndAccountIdAndCategory_TypeAndDateBetween(getCurrentUserId(),
-                                                accountId, CategoryType.EXPENSE, range.start(), range.end());
+                                .findAllByUserIdAndCategory_TypeAndDateBetween(getCurrentUserId(),
+                                                CategoryType.EXPENSE, range.start(), range.end());
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
                                                 t -> t.getDate().format(DateTimeFormatter.ofPattern("MM.yyyy")),
@@ -121,8 +102,8 @@ public class AnalyticsService {
         /**
          * Общие суммы: расходы, доходы, баланс
          */
-        public Map<String, BigDecimal> getSummary(UUID accountId, YearMonth month) {
-                List<Transaction> transactions = getTransactionsForAccountAndMonth(accountId, month);
+        public Map<String, BigDecimal> getSummary(YearMonth month) {
+                List<Transaction> transactions = getTransactionsForMonth(month);
 
                 BigDecimal income = transactions.stream()
                                 .filter(t -> t.getCategory().getType() == CategoryType.INCOME)
@@ -190,16 +171,16 @@ public class AnalyticsService {
                                                                                                 BigDecimal::add))));
         }
 
-        private List<Transaction> getTransactionsForAccountAndMonth(UUID accountId, YearMonth month) {
+        private List<Transaction> getTransactionsForMonth(YearMonth month) {
                 Long userId = getCurrentUserId();
-                return transactionRepository.findAllByUserIdAndAccountIdAndDateBetween(userId,
-                                accountId, month.atDay(1), month.atEndOfMonth());
+                return transactionRepository.findAllByUserIdAndDateBetween(userId,
+                                 month.atDay(1), month.atEndOfMonth());
         }
 
-        private List<Transaction> getExpensesForAccountAndMonth(UUID accountId, YearMonth month) {
+        private List<Transaction> getExpensesAndMonth(YearMonth month) {
                 Long userId = getCurrentUserId();
-                return transactionRepository.findAllByUserIdAndAccountIdAndCategory_TypeAndDateBetween(userId,
-                                accountId, CategoryType.EXPENSE, month.atDay(1), month.atEndOfMonth());
+                return transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
+                                 CategoryType.EXPENSE, month.atDay(1), month.atEndOfMonth());
         }
 
         private Long getCurrentUserId() {

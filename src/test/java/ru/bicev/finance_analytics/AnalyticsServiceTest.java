@@ -23,7 +23,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import ru.bicev.finance_analytics.dto.DateRange;
-import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Budget;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.RecurringTransaction;
@@ -66,7 +65,6 @@ public class AnalyticsServiceTest {
 
         private User user;
 
-        private Account acc;
 
         private Category catExpense1;
         private Category catExpense2;
@@ -95,19 +93,12 @@ public class AnalyticsServiceTest {
                 user = User.builder()
                                 .id(userId).email("test@email.com").name("John Doe").build();
 
-                acc = Account.builder()
-                                .id(accountId)
-                                .name("Main")
-                                .currency("USD")
-                                .user(user)
-                                .build();
 
                 catExpense1 = Category.builder()
                                 .id(expCategoryId1)
                                 .name("Food")
                                 .type(CategoryType.EXPENSE)
                                 .user(user)
-                                .account(acc)
                                 .build();
 
                 catExpense2 = Category.builder()
@@ -115,7 +106,6 @@ public class AnalyticsServiceTest {
                                 .name("Entertainment")
                                 .type(CategoryType.EXPENSE)
                                 .user(user)
-                                .account(acc)
                                 .build();
 
                 catIncome = Category.builder()
@@ -123,12 +113,10 @@ public class AnalyticsServiceTest {
                                 .name("Salary")
                                 .type(CategoryType.INCOME)
                                 .user(user)
-                                .account(acc)
                                 .build();
 
                 tr1 = Transaction.builder()
                                 .id(UUID.randomUUID())
-                                .account(acc)
                                 .category(catExpense1)
                                 .date(LocalDate.of(2025, 10, 5))
                                 .description("Bread")
@@ -139,7 +127,6 @@ public class AnalyticsServiceTest {
 
                 tr2 = Transaction.builder()
                                 .id(UUID.randomUUID())
-                                .account(acc)
                                 .category(catExpense1)
                                 .date(LocalDate.of(2025, 10, 11))
                                 .description("Food supply")
@@ -150,7 +137,6 @@ public class AnalyticsServiceTest {
 
                 tr3 = Transaction.builder()
                                 .id(UUID.randomUUID())
-                                .account(acc)
                                 .category(catIncome)
                                 .date(LocalDate.of(2025, 10, 15))
                                 .description("Half of salary")
@@ -161,7 +147,6 @@ public class AnalyticsServiceTest {
 
                 tr4 = Transaction.builder()
                                 .id(UUID.randomUUID())
-                                .account(acc)
                                 .category(catExpense2)
                                 .date(LocalDate.of(2025, 10, 22))
                                 .description("Game copy")
@@ -172,7 +157,6 @@ public class AnalyticsServiceTest {
 
                 rtr1 = RecurringTransaction.builder()
                                 .id(UUID.randomUUID())
-                                .account(acc)
                                 .category(catExpense2)
                                 .frequency(Frequency.MONTHLY)
                                 .nextExecutionDate(LocalDate.of(2025, 12, 25))
@@ -184,7 +168,6 @@ public class AnalyticsServiceTest {
 
                 rtr2 = RecurringTransaction.builder()
                                 .id(UUID.randomUUID())
-                                .account(acc)
                                 .category(catExpense2)
                                 .nextExecutionDate(LocalDate.of(2025, 12, 31))
                                 .description("Some subscription service")
@@ -206,7 +189,7 @@ public class AnalyticsServiceTest {
 
         @Test
         void getExpensesByCategory() {
-                when(transactionRepository.findAllByUserIdAndAccountIdAndCategory_TypeAndDateBetween(userId, accountId,
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
@@ -220,7 +203,7 @@ public class AnalyticsServiceTest {
 
         @Test
         void testGetTopCategories() {
-                when(transactionRepository.findAllByUserIdAndAccountIdAndCategory_TypeAndDateBetween(userId, accountId,
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
@@ -232,20 +215,10 @@ public class AnalyticsServiceTest {
                 assertEquals("Entertainment", result.get(1).getKey());
         }
 
-        @Test
-        void testGetExpensesByAccount() {
-                when(transactionRepository.findAllByUserIdAndDateBetween(userId, month.atDay(1), month.atEndOfMonth()))
-                                .thenReturn(List.of(tr1, tr2, tr4));
-
-                Map<String, BigDecimal> result = analyticsService.getExpensesByAccount(month);
-
-                assertNotNull(result);
-                assertEquals(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount()), result.get(acc.getName()));
-        }
 
         @Test
         void testGetDailyExpenses() {
-                when(transactionRepository.findAllByUserIdAndAccountIdAndCategory_TypeAndDateBetween(userId, accountId,
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
@@ -259,7 +232,7 @@ public class AnalyticsServiceTest {
 
         @Test
         void testGetMonthlyExpenses() {
-                when(transactionRepository.findAllByUserIdAndAccountIdAndCategory_TypeAndDateBetween(userId, accountId,
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
@@ -272,10 +245,10 @@ public class AnalyticsServiceTest {
 
         @Test
         void testGetSummary() {
-                when(transactionRepository.findAllByUserIdAndAccountIdAndDateBetween(userId, accountId, month.atDay(1),
+                when(transactionRepository.findAllByUserIdAndDateBetween(userId, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr3, tr4));
 
-                Map<String, BigDecimal> result = analyticsService.getSummary(accountId, month);
+                Map<String, BigDecimal> result = analyticsService.getSummary(month);
 
                 assertNotNull(result);
                 assertEquals(tr3.getAmount(), result.get("income"));

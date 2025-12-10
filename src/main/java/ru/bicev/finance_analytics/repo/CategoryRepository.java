@@ -13,8 +13,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
     List<Category> findAllByUserId(Long userId);
 
-    List<Category> findAllByUserIdAndAccountId(Long userId, UUID accountId);
-
     List<Category> findAllByUserIdAndType(Long userId, CategoryType type);
 
     Optional<Category> findByIdAndUserId(UUID id, Long userId);

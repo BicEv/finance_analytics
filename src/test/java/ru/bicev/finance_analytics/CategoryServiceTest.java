@@ -10,11 +10,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import ru.bicev.finance_analytics.dto.CategoryDto;
 import ru.bicev.finance_analytics.dto.CategoryRequest;
-import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
-import ru.bicev.finance_analytics.repo.AccountRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.service.CategoryService;
 import ru.bicev.finance_analytics.service.UserService;
@@ -35,26 +33,16 @@ public class CategoryServiceTest {
         @Mock
         private CategoryRepository categoryRepository;
 
-        @Mock
-        private AccountRepository accountRepository;
-
         @InjectMocks
         private CategoryService categoryService;
 
         private User user;
-        private Account account;
 
         @BeforeEach
         void init() {
                 user = User.builder()
                                 .id(10L)
                                 .email("test@mail.com")
-                                .build();
-
-                account = Account.builder()
-                                .id(UUID.randomUUID())
-                                .user(user)
-                                .name("Main")
                                 .build();
 
                 when(userService.getCurrentUser()).thenReturn(user);
@@ -65,15 +53,10 @@ public class CategoryServiceTest {
         // --------------------------------------------------------
         @Test
         void testCreateCategory_success() {
-                UUID accountId = account.getId();
                 CategoryRequest request = new CategoryRequest(
-                                accountId,
                                 "Food",
                                 CategoryType.EXPENSE,
                                 "#ff0000");
-
-                when(accountRepository.findByIdAndUserId(accountId, user.getId()))
-                                .thenReturn(Optional.of(account));
 
                 when(categoryRepository.save(any(Category.class)))
                                 .thenAnswer(inv -> inv.getArgument(0));
@@ -89,24 +72,7 @@ public class CategoryServiceTest {
                 assertEquals(CategoryType.EXPENSE, saved.getType());
                 assertEquals("#ff0000", saved.getColor());
                 assertEquals(user, saved.getUser());
-                assertEquals(account, saved.getAccount());
                 assertNotNull(saved.getCreatedAt());
-        }
-
-        @Test
-        void testCreateCategory_accountNotFound() {
-                UUID accountId = UUID.randomUUID();
-                CategoryRequest request = new CategoryRequest(
-                                accountId,
-                                "Food",
-                                CategoryType.EXPENSE,
-                                "#ff0000");
-
-                when(accountRepository.findByIdAndUserId(accountId, user.getId()))
-                                .thenReturn(Optional.empty());
-
-                assertThrows(NotFoundException.class,
-                                () -> categoryService.createCategory(request));
         }
 
         // --------------------------------------------------------
@@ -115,14 +81,14 @@ public class CategoryServiceTest {
         @Test
         void testGetUserCategories_noAccountId() {
                 List<Category> categories = List.of(
-                                Category.builder().id(UUID.randomUUID()).user(user).name("Food").account(account)
+                                Category.builder().id(UUID.randomUUID()).user(user).name("Food")
                                                 .type(CategoryType.EXPENSE)
                                                 .build());
 
                 when(categoryRepository.findAllByUserId(user.getId()))
                                 .thenReturn(categories);
 
-                List<CategoryDto> result = categoryService.getUserCategories(null);
+                List<CategoryDto> result = categoryService.getUserCategories();
 
                 assertEquals(1, result.size());
                 verify(categoryRepository).findAllByUserId(user.getId());
@@ -132,17 +98,17 @@ public class CategoryServiceTest {
         void testGetUserCategories_withAccountId() {
                 UUID accountId = UUID.randomUUID();
                 List<Category> categories = List.of(
-                                Category.builder().id(UUID.randomUUID()).user(user).account(account).name("Transport")
+                                Category.builder().id(UUID.randomUUID()).user(user).name("Transport")
                                                 .type(CategoryType.EXPENSE)
                                                 .build());
 
-                when(categoryRepository.findAllByUserIdAndAccountId(user.getId(), accountId))
+                when(categoryRepository.findAllByUserId(user.getId()))
                                 .thenReturn(categories);
 
-                List<CategoryDto> result = categoryService.getUserCategories(accountId);
+                List<CategoryDto> result = categoryService.getUserCategories();
 
                 assertEquals(1, result.size());
-                verify(categoryRepository).findAllByUserIdAndAccountId(user.getId(), accountId);
+                verify(categoryRepository).findAllByUserId(user.getId());
         }
 
         // --------------------------------------------------------
@@ -154,7 +120,6 @@ public class CategoryServiceTest {
                 Category cat = Category.builder()
                                 .id(categoryId)
                                 .user(user)
-                                .account(account)
                                 .name("Bills")
                                 .type(CategoryType.EXPENSE)
                                 .build();
@@ -185,19 +150,16 @@ public class CategoryServiceTest {
         @Test
         void testUpdateCategory_success() {
                 UUID id = UUID.randomUUID();
-                UUID accountId = UUID.randomUUID();
 
                 Category existing = Category.builder()
                                 .id(id)
                                 .name("Old")
                                 .color("#000000")
-                                .account(account)
                                 .user(user)
                                 .type(CategoryType.EXPENSE)
                                 .build();
 
                 CategoryRequest request = new CategoryRequest(
-                                accountId,
                                 "Food",
                                 CategoryType.EXPENSE,
                                 "#ffffff");
@@ -221,7 +183,6 @@ public class CategoryServiceTest {
                 UUID id = UUID.randomUUID();
 
                 CategoryRequest request = new CategoryRequest(
-                                UUID.randomUUID(),
                                 "Food",
                                 CategoryType.EXPENSE,
                                 "#ff0000");
@@ -269,7 +230,7 @@ public class CategoryServiceTest {
         @Test
         void testGetCategoriesByType_success() {
                 List<Category> categories = List.of(
-                                Category.builder().id(UUID.randomUUID()).user(user).name("Salary").account(account)
+                                Category.builder().id(UUID.randomUUID()).user(user).name("Salary")
                                                 .type(CategoryType.INCOME).build());
 
                 when(categoryRepository.findAllByUserIdAndType(user.getId(), CategoryType.INCOME))
@@ -287,9 +248,9 @@ public class CategoryServiceTest {
         @Test
         void testGetAllCategoriesForUser_success() {
                 List<Category> categories = List.of(
-                                Category.builder().id(UUID.randomUUID()).user(user).name("Salary").account(account)
+                                Category.builder().id(UUID.randomUUID()).user(user).name("Salary")
                                                 .type(CategoryType.INCOME).build(),
-                                Category.builder().id(UUID.randomUUID()).user(user).name("Food").account(account)
+                                Category.builder().id(UUID.randomUUID()).user(user).name("Food")
                                                 .type(CategoryType.EXPENSE).build());
 
                 when(categoryRepository.findAllByUserId(user.getId())).thenReturn(categories);
