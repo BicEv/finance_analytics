@@ -56,7 +56,6 @@ public class AnalyticsServiceTest {
         private AnalyticsService analyticsService;
 
         private Long userId;
-        private UUID accountId;
         private UUID expCategoryId1;
         private UUID expCategoryId2;
         private UUID incCategoryId;
@@ -64,7 +63,6 @@ public class AnalyticsServiceTest {
         private YearMonth month;
 
         private User user;
-
 
         private Category catExpense1;
         private Category catExpense2;
@@ -83,7 +81,6 @@ public class AnalyticsServiceTest {
         @BeforeEach
         void setUp() {
                 userId = 10L;
-                accountId = UUID.randomUUID();
                 expCategoryId1 = UUID.randomUUID();
                 expCategoryId2 = UUID.randomUUID();
                 incCategoryId = UUID.randomUUID();
@@ -92,7 +89,6 @@ public class AnalyticsServiceTest {
 
                 user = User.builder()
                                 .id(userId).email("test@email.com").name("John Doe").build();
-
 
                 catExpense1 = Category.builder()
                                 .id(expCategoryId1)
@@ -189,58 +185,57 @@ public class AnalyticsServiceTest {
 
         @Test
         void getExpensesByCategory() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
-                Map<String, BigDecimal> result = analyticsService.getExpensesByCategory(accountId, month);
+                var result = analyticsService.getExpensesByCategory(month);
 
-                assertEquals(2, result.keySet().size());
-                assertEquals(tr1.getAmount().add(tr2.getAmount()), result.get("Food"));
-                assertEquals(tr4.getAmount(), result.get("Entertainment"));
+                assertEquals(2, result.size());
+                assertEquals(tr1.getAmount().add(tr2.getAmount()), result.get(0).total());
+                assertEquals(tr4.getAmount(), result.get(1).total());
 
         }
 
         @Test
         void testGetTopCategories() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
-                List<Map.Entry<String, BigDecimal>> result = analyticsService.getTopCategories(accountId, month, 3);
+                var result = analyticsService.getTopCategories(month, 3);
 
                 assertNotNull(result);
                 assertEquals(2, result.size());
-                assertEquals("Food", result.get(0).getKey());
-                assertEquals("Entertainment", result.get(1).getKey());
+                assertEquals("Food", result.get(0).category());
+                assertEquals("Entertainment", result.get(1).category());
         }
-
 
         @Test
         void testGetDailyExpenses() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
-                Map<LocalDate, BigDecimal> result = analyticsService.getDailyExpenses(accountId, month);
+                var result = analyticsService.getDailyExpenses(month);
 
                 assertNotNull(result);
-                assertEquals(tr1.getAmount(), result.get(tr1.getDate()));
-                assertEquals(tr2.getAmount(), result.get(tr2.getDate()));
-                assertEquals(tr4.getAmount(), result.get(tr4.getDate()));
+                assertEquals(tr2.getAmount(), result.get(0).amount());
+                assertEquals(tr4.getAmount(), result.get(1).amount());
+                assertEquals(tr1.getAmount(), result.get(2).amount());
         }
 
         @Test
         void testGetMonthlyExpenses() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId, 
+                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
                                 CategoryType.EXPENSE, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
 
-                Map<String, BigDecimal> result = analyticsService.getMonthlyExpenses(accountId,
+                var result = analyticsService.getMonthlyExpenses(
                                 DateRange.ofMonth(month));
 
                 assertNotNull(result);
-                assertEquals(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount()), result.get("10.2025"));
+                assertEquals(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount()), result.get(0).total());
         }
 
         @Test
@@ -248,13 +243,13 @@ public class AnalyticsServiceTest {
                 when(transactionRepository.findAllByUserIdAndDateBetween(userId, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr3, tr4));
 
-                Map<String, BigDecimal> result = analyticsService.getSummary(month);
+                var result = analyticsService.getSummary(month);
 
                 assertNotNull(result);
-                assertEquals(tr3.getAmount(), result.get("income"));
-                assertEquals(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount()), result.get("expense"));
+                assertEquals(tr3.getAmount(), result.income());
+                assertEquals(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount()), result.expense());
                 assertEquals(tr3.getAmount().subtract(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount())),
-                                result.get("balance"));
+                                result.balance());
 
         }
 
@@ -265,17 +260,17 @@ public class AnalyticsServiceTest {
                                 month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2));
 
-                Map<String, Object> result = analyticsService.getCategoryBudgetStatus(budgetId);
+                var result = analyticsService.getCategoryBudgetStatus(budgetId);
 
                 assertNotNull(result);
-                assertEquals(b1.getCategory().getName(), result.get("category"));
-                assertEquals(b1.getLimitAmount(), result.get("limit"));
-                assertEquals(tr1.getAmount().add(tr2.getAmount()), result.get("spent"));
+                assertEquals(b1.getCategory().getName(), result.category());
+                assertEquals(b1.getLimitAmount(), result.limit());
+                assertEquals(tr1.getAmount().add(tr2.getAmount()), result.spent());
                 assertEquals(
                                 tr1.getAmount().add(tr2.getAmount())
                                                 .multiply(BigDecimal.valueOf(100).divide(b1.getLimitAmount()))
                                                 .setScale(2, RoundingMode.HALF_UP),
-                                result.get("percentUsed"));
+                                result.percentUsed());
 
         }
 
@@ -294,10 +289,10 @@ public class AnalyticsServiceTest {
                                 true,
                                 LocalDate.now())).thenReturn(List.of(rtr1, rtr2));
 
-                Map<String, BigDecimal> result = analyticsService.getUpcomingRecurringPayments();
+                var result = analyticsService.getUpcomingRecurringPayments();
 
                 assertNotNull(result);
-                assertEquals(rtr1.getAmount().add(rtr2.getAmount()), result.get("12.2025"));
+                assertEquals(rtr1.getAmount().add(rtr2.getAmount()), result.get(0).expectedAmount());
         }
 
 }

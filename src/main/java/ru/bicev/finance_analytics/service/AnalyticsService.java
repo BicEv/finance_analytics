@@ -6,13 +6,19 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import ru.bicev.finance_analytics.dto.CategoryBudgetStatusDto;
+import ru.bicev.finance_analytics.dto.CategoryExpenseDto;
+import ru.bicev.finance_analytics.dto.DailyExpenseDto;
 import ru.bicev.finance_analytics.dto.DateRange;
+import ru.bicev.finance_analytics.dto.MonthlyExpenseDto;
+import ru.bicev.finance_analytics.dto.RecurringForecastDto;
+import ru.bicev.finance_analytics.dto.SummaryDto;
+import ru.bicev.finance_analytics.dto.TopCategoryDto;
 import ru.bicev.finance_analytics.entity.Budget;
 import ru.bicev.finance_analytics.entity.RecurringTransaction;
 import ru.bicev.finance_analytics.entity.Transaction;
@@ -30,6 +36,8 @@ public class AnalyticsService {
         private final BudgetRepository budgetRepository;
         private final UserService userService;
 
+        private static final BigDecimal ZERO = BigDecimal.ZERO;
+
         public AnalyticsService(TransactionRepository transactionRepository,
                         RecurringTransactionRepository recurringTransactionRepository,
                         BudgetRepository budgetRepository,
@@ -43,48 +51,60 @@ public class AnalyticsService {
         /**
          * Траты по категориям за период
          */
-        public Map<String, BigDecimal> getExpensesByCategory(UUID accountId, YearMonth month) {
+        public List<CategoryExpenseDto> getExpensesByCategory(YearMonth month) {
                 List<Transaction> transactions = getExpensesAndMonth(month);
 
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
-                                                t -> t.getCategory().getName(),
-                                                Collectors.mapping(Transaction::getAmount,
-                                                                Collectors.reducing(BigDecimal.ZERO.setScale(2),
-                                                                                BigDecimal::add))));
+                                                Transaction::getCategory,
+                                                Collectors.reducing(ZERO, Transaction::getAmount,
+                                                                BigDecimal::add)))
+                                .entrySet()
+                                .stream()
+                                .map(e -> new CategoryExpenseDto(
+                                                e.getKey().getName(),
+                                                e.getValue().setScale(2)))
+                                .sorted((e1, e2) -> e2.total().compareTo(e1.total()))
+                                .toList();
+
         }
 
         /**
          * Топ N категорий по тратам
          */
-        public List<Map.Entry<String, BigDecimal>> getTopCategories(UUID accountId, YearMonth month, int limit) {
+        public List<TopCategoryDto> getTopCategories(YearMonth month, int limit) {
 
-                Map<String, BigDecimal> expensesByCategory = getExpensesByCategory(accountId, month);
+                var expensesByCategory = getExpensesByCategory(month);
 
-                return expensesByCategory.entrySet().stream()
-                                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                return expensesByCategory.stream()
+                                .sorted((e1, e2) -> e2.total().compareTo(e1.total()))
                                 .limit(limit)
+                                .map(cat -> new TopCategoryDto(cat.category(), cat.total().setScale(2)))
                                 .toList();
         }
 
         /**
          * Траты по дням (для графиков)
          */
-        public Map<LocalDate, BigDecimal> getDailyExpenses(UUID accountId, YearMonth month) {
+        public List<DailyExpenseDto> getDailyExpenses(YearMonth month) {
                 List<Transaction> transactions = getExpensesAndMonth(month);
 
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
                                                 t -> t.getDate(),
                                                 Collectors.mapping(Transaction::getAmount,
-                                                                Collectors.reducing(BigDecimal.ZERO.setScale(2),
-                                                                                BigDecimal::add))));
+                                                                Collectors.reducing(ZERO,
+                                                                                BigDecimal::add))))
+                                .entrySet()
+                                .stream()
+                                .map(e -> new DailyExpenseDto(e.getKey(), e.getValue().setScale(2)))
+                                .toList();
         }
 
         /**
          * Траты по месяцам (MM.yyyy → total)
          */
-        public Map<String, BigDecimal> getMonthlyExpenses(UUID accountId, DateRange range) {
+        public List<MonthlyExpenseDto> getMonthlyExpenses(DateRange range) {
                 if (range.start().isAfter(range.end())) {
                         throw new IllegalStateException("Start of date range can not be after end");
 
@@ -94,39 +114,45 @@ public class AnalyticsService {
                                                 CategoryType.EXPENSE, range.start(), range.end());
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
-                                                t -> t.getDate().format(DateTimeFormatter.ofPattern("MM.yyyy")),
-                                                Collectors.reducing(BigDecimal.ZERO.setScale(2), Transaction::getAmount,
-                                                                BigDecimal::add)));
+                                                t -> YearMonth.from(t.getDate()),
+                                                Collectors.reducing(ZERO, Transaction::getAmount,
+                                                                BigDecimal::add)))
+                                .entrySet()
+                                .stream()
+                                .map(e -> new MonthlyExpenseDto(
+                                                e.getKey().format(DateTimeFormatter.ofPattern("MM.yyyy")),
+                                                e.getValue().setScale(2)))
+                                .toList();
         }
 
         /**
          * Общие суммы: расходы, доходы, баланс
          */
-        public Map<String, BigDecimal> getSummary(YearMonth month) {
+        public SummaryDto getSummary(YearMonth month) {
                 List<Transaction> transactions = getTransactionsForMonth(month);
 
-                BigDecimal income = transactions.stream()
-                                .filter(t -> t.getCategory().getType() == CategoryType.INCOME)
-                                .map(Transaction::getAmount)
-                                .reduce(BigDecimal.ZERO.setScale(2), BigDecimal::add);
+                BigDecimal income = ZERO;
 
-                BigDecimal expense = transactions.stream()
-                                .filter(t -> t.getCategory().getType() == CategoryType.EXPENSE)
-                                .map(Transaction::getAmount)
-                                .reduce(BigDecimal.ZERO.setScale(2), BigDecimal::add);
+                BigDecimal expense = ZERO;
+
+                for (Transaction t : transactions) {
+                        if (t.getCategory().getType() == CategoryType.INCOME) {
+                                income = income.add(t.getAmount());
+                        } else {
+
+                                expense = expense.add(t.getAmount());
+                        }
+                }
 
                 BigDecimal balance = income.subtract(expense);
 
-                return Map.of("income", income,
-                                "expense", expense,
-                                "balance", balance);
-
+                return new SummaryDto(income, expense, balance);
         }
 
         /**
          * Аналитика бюджета (сколько потрачено / какой процент)
          */
-        public Map<String, Object> getCategoryBudgetStatus(UUID budgetId) {
+        public CategoryBudgetStatusDto getCategoryBudgetStatus(UUID budgetId) {
                 Long userId = getCurrentUserId();
                 Budget budget = budgetRepository.findByIdAndUserId(budgetId, userId)
                                 .orElseThrow(() -> new NotFoundException("Budget not found"));
@@ -137,25 +163,30 @@ public class AnalyticsService {
                                 userId,
                                 budget.getCategory().getId(), start, end);
 
-                BigDecimal spent = transactions.stream().map(Transaction::getAmount)
-                                .reduce(BigDecimal.ZERO.setScale(2), BigDecimal::add);
+                BigDecimal spent = transactions.stream()
+                                .map(Transaction::getAmount)
+                                .reduce(ZERO, BigDecimal::add)
+                                .setScale(2, RoundingMode.HALF_UP);
 
-                BigDecimal percentUsed = BigDecimal.ZERO;
-                if (budget.getLimitAmount() != null && budget.getLimitAmount().compareTo(BigDecimal.ZERO) > 0) {
-                        percentUsed = spent.divide(budget.getLimitAmount()).multiply(BigDecimal.valueOf(100))
+                BigDecimal percentUsed = ZERO;
+                if (budget.getLimitAmount() != null && budget.getLimitAmount().compareTo(ZERO) > 0) {
+                        percentUsed = spent
+                                        .divide(budget.getLimitAmount(), 2, RoundingMode.HALF_UP)
+                                        .multiply(BigDecimal.valueOf(100))
                                         .setScale(2, RoundingMode.HALF_UP);
                 }
 
-                return Map.of("category", budget.getCategory().getName(),
-                                "limit", budget.getLimitAmount(),
-                                "spent", spent,
-                                "percentUsed", percentUsed);
+                return new CategoryBudgetStatusDto(
+                                budget.getCategory().getName(),
+                                budget.getLimitAmount(),
+                                spent,
+                                percentUsed);
         }
 
         /**
          * Прогноз затрат на основе RT
          */
-        public Map<String, BigDecimal> getUpcomingRecurringPayments() {
+        public List<RecurringForecastDto> getUpcomingRecurringPayments() {
                 Long userId = getCurrentUserId();
                 List<RecurringTransaction> transactions = recurringTransactionRepository
                                 .findAllByUserIdAndActiveAndNextExecutionDateGreaterThan(userId, true, LocalDate.now());
@@ -166,21 +197,23 @@ public class AnalyticsService {
                                                                 t -> t.getNextExecutionDate().format(
                                                                                 DateTimeFormatter.ofPattern("MM.yyyy")),
                                                                 Collectors.mapping(RecurringTransaction::getAmount,
-                                                                                Collectors.reducing(BigDecimal.ZERO
-                                                                                                .setScale(2),
-                                                                                                BigDecimal::add))));
+                                                                                Collectors.reducing(ZERO,
+                                                                                                BigDecimal::add))))
+                                .entrySet()
+                                .stream()
+                                .map(e -> new RecurringForecastDto(e.getKey(), e.getValue().setScale(2))).toList();
         }
 
         private List<Transaction> getTransactionsForMonth(YearMonth month) {
                 Long userId = getCurrentUserId();
                 return transactionRepository.findAllByUserIdAndDateBetween(userId,
-                                 month.atDay(1), month.atEndOfMonth());
+                                month.atDay(1), month.atEndOfMonth());
         }
 
         private List<Transaction> getExpensesAndMonth(YearMonth month) {
                 Long userId = getCurrentUserId();
                 return transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
-                                 CategoryType.EXPENSE, month.atDay(1), month.atEndOfMonth());
+                                CategoryType.EXPENSE, month.atDay(1), month.atEndOfMonth());
         }
 
         private Long getCurrentUserId() {
