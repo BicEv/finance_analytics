@@ -5,17 +5,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.bicev.finance_analytics.dto.TransactionDto;
 import ru.bicev.finance_analytics.dto.TransactionRequest;
-import ru.bicev.finance_analytics.entity.Account;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.Transaction;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
-import ru.bicev.finance_analytics.repo.AccountRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.TransactionRepository;
 
@@ -24,26 +24,22 @@ public class TransactionService {
 
     private final UserService userService;
     private final TransactionRepository transactionRepository;
-    private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
 
     public TransactionService(UserService userService, TransactionRepository transactionRepository,
-            AccountRepository accountRepository, CategoryRepository categoryRepository) {
+            CategoryRepository categoryRepository) {
         this.userService = userService;
         this.transactionRepository = transactionRepository;
-        this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
     }
 
     @Transactional
-    public Transaction createTransaction(TransactionRequest request) {
+    public TransactionDto createTransaction(TransactionRequest request) {
         User user = getCurrentUser();
-        Account account = getAccount(request.accountId(), user.getId());
         Category category = getCategory(request.categoryId(), user.getId());
 
         Transaction transaction = Transaction.builder()
                 .user(user)
-                .account(account)
                 .category(category)
                 .date(request.date() != null ? request.date() : LocalDate.now())
                 .amount(request.amount().setScale(2, RoundingMode.HALF_UP))
@@ -52,17 +48,15 @@ public class TransactionService {
                 .isPlanned(request.isPlanned())
                 .build();
 
-        return transactionRepository.save(transaction);
+        return toDto(transactionRepository.save(transaction));
     }
 
     @Transactional
     public Transaction createTransactionForUser(User user, TransactionRequest request) {
-        Account account = getAccount(request.accountId(), user.getId());
         Category category = getCategory(request.categoryId(), user.getId());
 
         Transaction transaction = Transaction.builder()
                 .user(user)
-                .account(account)
                 .category(category)
                 .date(request.date() != null ? request.date() : LocalDate.now())
                 .amount(request.amount().setScale(2, RoundingMode.HALF_UP))
@@ -74,28 +68,33 @@ public class TransactionService {
         return transactionRepository.save(transaction);
     }
 
-    public List<Transaction> getTransactions() {
-        return transactionRepository.findAllByUserId(getCurrentUserId());
+    public List<TransactionDto> getTransactions() {
+        return transactionRepository.findAllByUserId(getCurrentUserId()).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public List<Transaction> getTransactionsByDateBetween(UUID accountId, LocalDate from, LocalDate to) {
+    public List<TransactionDto> getTransactionsByDateBetween(LocalDate from, LocalDate to) {
 
         if (from.isAfter(to)) {
             throw new IllegalArgumentException("From-date cannot be after to-date");
         }
 
-        return transactionRepository.findAllByUserIdAndAccountIdAndDateBetween(
-                getCurrentUserId(),
-                accountId, from, to);
+        return transactionRepository.findAllByUserIdAndDateBetween(
+                getCurrentUserId(), from, to)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public Transaction getTransactionById(UUID transactionId) {
-        return transactionRepository.findByIdAndUserId(transactionId, getCurrentUserId())
+    public TransactionDto getTransactionById(UUID transactionId) {
+        Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
+        return toDto(transaction);
     }
 
     @Transactional
-    public Transaction updateTransaction(UUID transactionId, TransactionRequest request) {
+    public TransactionDto updateTransaction(UUID transactionId, TransactionRequest request) {
         Long userId = getCurrentUserId();
 
         Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, userId)
@@ -120,12 +119,7 @@ public class TransactionService {
             transaction.setCategory(category);
         }
 
-        if (request.accountId() != null) {
-            Account account = getAccount(request.accountId(), userId);
-            transaction.setAccount(account);
-        }
-
-        return transactionRepository.save(transaction);
+        return toDto(transactionRepository.save(transaction));
     }
 
     @Transactional
@@ -144,14 +138,20 @@ public class TransactionService {
         return userService.getCurrentUser().getId();
     }
 
-    private Account getAccount(UUID accountId, Long userId) {
-        return accountRepository.findByIdAndUserId(accountId, userId)
-                .orElseThrow(() -> new NotFoundException("Account not found"));
-    }
-
     private Category getCategory(UUID categoryId, Long userId) {
         return categoryRepository.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
+    }
+
+    private TransactionDto toDto(Transaction transaction) {
+        return new TransactionDto(
+                transaction.getId(),
+                transaction.getCategory().getId(),
+                transaction.getCategory().getName(),
+                transaction.getAmount(),
+                transaction.getDate(),
+                transaction.getDescription(),
+                transaction.isPlanned());
     }
 
 }
