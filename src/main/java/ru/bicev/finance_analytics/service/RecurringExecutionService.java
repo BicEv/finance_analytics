@@ -3,6 +3,8 @@ package ru.bicev.finance_analytics.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,8 @@ public class RecurringExecutionService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(RecurringExecutionService.class);
+
     public RecurringExecutionService(TransactionService transactionService,
             RecurringTransactionService recuringTransactionService, UserRepository userRepository,
             CategoryRepository categoryRepository) {
@@ -39,11 +43,11 @@ public class RecurringExecutionService {
         List<RecurringTransaction> due = recuringTransactionService.findAllActiveByNextExecutionDateBefore(today);
 
         for (RecurringTransaction rt : due) {
-            
+
             Long userId = rt.getUser().getId();
             User user = userRepository.findById(rt.getUser().getId())
                     .orElseThrow(() -> new NotFoundException("User not found"));
-            
+
             Category category = categoryRepository.findByIdAndUserId(rt.getCategory().getId(), userId)
                     .orElseThrow(() -> new NotFoundException("Category not found"));
 
@@ -58,7 +62,8 @@ public class RecurringExecutionService {
 
             rt.setLastExecutionDate(today);
             rt.setNextExecutionDate(calculateNextDate(today, rt.getFrequency()));
-
+            
+            logger.debug("executeDueTransactions()");
             recuringTransactionService.save(rt);
         }
     }

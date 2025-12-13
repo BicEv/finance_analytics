@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import ru.bicev.finance_analytics.dto.CategoryBudgetStatusDto;
@@ -36,6 +38,8 @@ public class AnalyticsService {
         private final BudgetRepository budgetRepository;
         private final UserService userService;
 
+        private static final Logger logger = LoggerFactory.getLogger(AnalyticsService.class);
+
         private static final BigDecimal ZERO = BigDecimal.ZERO;
 
         public AnalyticsService(TransactionRepository transactionRepository,
@@ -54,6 +58,7 @@ public class AnalyticsService {
         public List<CategoryExpenseDto> getExpensesByCategory(YearMonth month) {
                 List<Transaction> transactions = getExpensesAndMonth(month);
 
+                logger.debug("getExpensesByCategory() for month: {}", month.toString());
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
                                                 Transaction::getCategory,
@@ -75,7 +80,7 @@ public class AnalyticsService {
         public List<TopCategoryDto> getTopCategories(YearMonth month, int limit) {
 
                 var expensesByCategory = getExpensesByCategory(month);
-
+                logger.debug("getTopCategories() for month: {}", month.toString());
                 return expensesByCategory.stream()
                                 .sorted((e1, e2) -> e2.total().compareTo(e1.total()))
                                 .limit(limit)
@@ -89,6 +94,7 @@ public class AnalyticsService {
         public List<DailyExpenseDto> getDailyExpenses(YearMonth month) {
                 List<Transaction> transactions = getExpensesAndMonth(month);
 
+                logger.debug("getDailyExpenses() for month: {}", month.toString());
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
                                                 t -> t.getDate(),
@@ -112,6 +118,8 @@ public class AnalyticsService {
                 List<Transaction> transactions = transactionRepository
                                 .findAllByUserIdAndCategory_TypeAndDateBetween(getCurrentUserId(),
                                                 CategoryType.EXPENSE, range.start(), range.end());
+                logger.debug("getMonthlyExpenses() for range from: {}, to: {}", range.start().toString(),
+                                range.end().toString());
                 return transactions.stream()
                                 .collect(Collectors.groupingBy(
                                                 t -> YearMonth.from(t.getDate()),
@@ -159,6 +167,8 @@ public class AnalyticsService {
                 LocalDate start = budget.getMonth().atDay(1);
                 LocalDate end = budget.getMonth().atEndOfMonth();
 
+                logger.debug("getCategoryBudgetStatus() for budget: {}", budgetId.toString());
+
                 List<Transaction> transactions = transactionRepository.findAllByUserIdAndCategoryIdAndDateBetween(
                                 userId,
                                 budget.getCategory().getId(), start, end);
@@ -190,6 +200,8 @@ public class AnalyticsService {
                 Long userId = getCurrentUserId();
                 List<RecurringTransaction> transactions = recurringTransactionRepository
                                 .findAllByUserIdAndActiveAndNextExecutionDateGreaterThan(userId, true, LocalDate.now());
+
+                logger.debug("getUpcomintRecurringPayments() for user: {}", userId);
 
                 return transactions.stream()
                                 .collect(

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,8 @@ public class TransactionService {
     private final UserService userService;
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
+
+    private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
 
     public TransactionService(UserService userService, TransactionRepository transactionRepository,
             CategoryRepository categoryRepository) {
@@ -47,7 +51,7 @@ public class TransactionService {
                 .description(request.description())
                 .isPlanned(request.isPlanned())
                 .build();
-
+        logger.debug("createTransaction() for user: {}", user.getId());
         return toDto(transactionRepository.save(transaction));
     }
 
@@ -64,11 +68,12 @@ public class TransactionService {
                 .description(request.description())
                 .isPlanned(request.isPlanned())
                 .build();
-
+        logger.debug("createTransactionForUser() for user: {}", user.getId());
         return transactionRepository.save(transaction);
     }
 
     public List<TransactionDto> getTransactions() {
+        logger.debug("getTransactions()");
         return transactionRepository.findAllByUserId(getCurrentUserId()).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -79,7 +84,7 @@ public class TransactionService {
         if (from.isAfter(to)) {
             throw new IllegalArgumentException("From-date cannot be after to-date");
         }
-
+        logger.debug("getTransactionsByDateBetween() from: {}; to: {}", from.toString(), to.toString());
         return transactionRepository.findAllByUserIdAndDateBetween(
                 getCurrentUserId(), from, to)
                 .stream()
@@ -90,6 +95,7 @@ public class TransactionService {
     public TransactionDto getTransactionById(UUID transactionId) {
         Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
+        logger.debug("getTransactionById() with id: {}", transactionId.toString());
         return toDto(transaction);
     }
 
@@ -118,7 +124,7 @@ public class TransactionService {
             Category category = getCategory(request.categoryId(), userId);
             transaction.setCategory(category);
         }
-
+        logger.debug("updateTransaction() with id: {}", transactionId.toString());
         return toDto(transactionRepository.save(transaction));
     }
 
@@ -127,6 +133,7 @@ public class TransactionService {
 
         Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
+        logger.debug("deleteTransaction() with id: {}", transactionId.toString());
         transactionRepository.delete(transaction);
     }
 

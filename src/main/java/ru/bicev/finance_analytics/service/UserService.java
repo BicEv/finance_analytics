@@ -3,6 +3,8 @@ package ru.bicev.finance_analytics.service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -18,6 +20,8 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -26,11 +30,13 @@ public class UserService {
     public User getOrCreateOAuthUser(String provider, OAuth2User oAuth2User) {
         String providerId = extractProviderId(provider, oAuth2User);
 
+        logger.debug("getOrCreateOAuthUser(), provider: {}; providerId: {}", provider, providerId);
         Optional<User> existing = userRepository.findByProviderAndProviderId(provider, providerId);
 
         if (existing.isPresent()) {
             User u = existing.get();
             u.setLastLoginAt(LocalDateTime.now());
+            logger.debug("User is found in db : {}", u.getId());
             return userRepository.save(u);
         }
 
@@ -47,7 +53,7 @@ public class UserService {
                 .createdAt(LocalDateTime.now())
                 .lastLoginAt(LocalDateTime.now())
                 .build();
-
+        logger.debug("User created");
         return userRepository.save(newUser);
     }
 

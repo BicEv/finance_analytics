@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,8 @@ public class CategoryService {
     private final UserService userService;
     private final CategoryRepository categoryRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(CategoryService.class);
+
     public CategoryService(UserService userService, CategoryRepository categoryRepository) {
         this.userService = userService;
         this.categoryRepository = categoryRepository;
@@ -38,14 +42,14 @@ public class CategoryService {
                 .color(request.color())
                 .createdAt(LocalDateTime.now())
                 .build();
-
+        logger.debug("createCategory() for user: {}", user.getId());
         return toDto(categoryRepository.save(category));
 
     }
 
     public List<CategoryDto> getUserCategories() {
         Long userId = getUserId();
-
+        logger.debug("getUserCategories() for user: {}", userId);
         return categoryRepository.findAllByUserId(userId)
                 .stream()
                 .map(this::toDto)
@@ -55,6 +59,7 @@ public class CategoryService {
     public CategoryDto getCategoryById(UUID categoryId) {
         Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
+        logger.debug("getCategoryById() with id: {}", categoryId);
         return toDto(category);
     }
 
@@ -66,7 +71,7 @@ public class CategoryService {
         category.setName(request.name());
         category.setType(request.type());
         category.setColor(request.color());
-
+        logger.debug("updateCategory() with id: {}", categoryId);
         return toDto(categoryRepository.save(category));
     }
 
@@ -74,7 +79,7 @@ public class CategoryService {
     public void deleteCategory(UUID categoryId) {
         Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-
+        logger.debug("deleteCategory() with id: {}", categoryId);
         categoryRepository.delete(category);
     }
 

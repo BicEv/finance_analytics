@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,8 @@ public class RecurringTransactionService {
     private final UserService userService;
     private final CategoryRepository categoryRepository;
     private final RecurringTransactionRepository recurringTransactionRepository;
+
+    private static final Logger logger = LoggerFactory.getLogger(RecurringTransactionService.class);
 
     public RecurringTransactionService(UserService userService,
             CategoryRepository categoryRepository, RecurringTransactionRepository recurringTransactionRepository) {
@@ -52,13 +56,13 @@ public class RecurringTransactionService {
                 .isActive(request.isActive())
                 .nextExecutionDate(request.nextExecutionDate())
                 .build();
-
+        logger.debug("createRecurringTransaction() for user: {}", user.getId());
         return toDto(recurringTransactionRepository.save(transaction));
     }
 
     public List<RecurringTransactionDto> getAllRecurringTransactions() {
         Long userId = getCurrentUserId();
-
+        logger.debug("getAllRecurringTransactions() for user: {}", userId);
         return recurringTransactionRepository.findAllByUserId(userId).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -67,6 +71,7 @@ public class RecurringTransactionService {
     public List<RecurringTransactionDto> getAllRecurringTransactionsAndDate(LocalDate date) {
         Long userId = getCurrentUserId();
 
+        logger.debug("getAllRecurringTransactionsAndDate() for user: {}; date: {}", userId, date.toString());
         return recurringTransactionRepository.findAllByUserIdAndNextExecutionDateLessThanEqual(userId, date).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -77,6 +82,8 @@ public class RecurringTransactionService {
         RecurringTransaction transaction = recurringTransactionRepository
                 .findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
+
+        logger.debug("getRecurringTransactionById() with id: {}", transactionId);
         return toDto(transaction);
     }
 
@@ -108,7 +115,7 @@ public class RecurringTransactionService {
                 throw new IllegalArgumentException("Next execution date cannot be before current date");
             transaction.setNextExecutionDate(request.nextExecutionDate());
         }
-
+        logger.debug("updateRecurringTransaction() with id: {}", transactionId.toString());
         transaction.setActive(request.isActive());
 
         return toDto(recurringTransactionRepository.save(transaction));
@@ -119,6 +126,7 @@ public class RecurringTransactionService {
         RecurringTransaction transaction = recurringTransactionRepository
                 .findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
+        logger.debug("deleteRecurringTransaction() with id: {}", transactionId.toString());
         recurringTransactionRepository.delete(transaction);
     }
 

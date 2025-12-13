@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,8 @@ public class BudgetService {
     private final CategoryRepository categoryRepository;
     private final UserService userService;
 
+    private static final Logger logger = LoggerFactory.getLogger(BudgetService.class);
+
     public BudgetService(BudgetRepository budgetRepository, CategoryRepository categoryRepository,
             UserService userService) {
         this.budgetRepository = budgetRepository;
@@ -39,6 +43,7 @@ public class BudgetService {
         Category category = categoryRepository.findByIdAndUserId(request.categoryId(), user.getId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
 
+        logger.debug("createBudget() for user: {}", user.getId());
         Budget budget = Budget.builder()
                 .user(user)
                 .category(category)
@@ -53,16 +58,19 @@ public class BudgetService {
     public BudgetDto getBudgetById(UUID budgetId) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
+        logger.debug("getBudget() withid: {}", budgetId.toString());
         return toDto(budget);
     }
 
     public List<BudgetDto> getAllBudgetsForUser() {
+        logger.debug("getAllBudgetsForUser()");
         return budgetRepository.findAllByUserId(getCurrentUser().getId()).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
     public List<BudgetDto> getBudgetsForMonth(YearMonth month) {
+        logger.debug("getBudgetsForMonth(): {}", month.toString());
         return budgetRepository.findByUserIdAndMonth(getCurrentUser().getId(), month).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -72,7 +80,7 @@ public class BudgetService {
     public BudgetDto updateBudget(UUID budgetId, BudgetRequest request) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
-
+        logger.debug("updateBudget() with id: {}", budgetId.toString());
         budget.setMonth(request.month());
         budget.setLimitAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
         return toDto(budgetRepository.save(budget));
@@ -82,6 +90,7 @@ public class BudgetService {
     public void deleteBudget(UUID budgetId) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
+        logger.debug("deleteBudget() with id: {}", budgetId.toString());
         budgetRepository.delete(budget);
     }
 
