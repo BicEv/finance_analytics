@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.constraints.Min;
 import ru.bicev.finance_analytics.dto.CategoryBudgetStatusDto;
 import ru.bicev.finance_analytics.dto.CategoryExpenseDto;
 import ru.bicev.finance_analytics.dto.DailyExpenseDto;
@@ -24,6 +26,7 @@ import ru.bicev.finance_analytics.dto.SummaryDto;
 import ru.bicev.finance_analytics.dto.TopCategoryDto;
 import ru.bicev.finance_analytics.service.AnalyticsService;
 
+@Validated
 @RestController
 @RequestMapping("/api/analytics")
 public class AnalyticsRestController {
@@ -41,7 +44,7 @@ public class AnalyticsRestController {
     }
 
     @GetMapping("/categories/top")
-    public ResponseEntity<List<TopCategoryDto>> getTopCategories(@RequestParam int limit,
+    public ResponseEntity<List<TopCategoryDto>> getTopCategories(@RequestParam @Min(1) int limit,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
         return ResponseEntity.ok(analyticsService.getTopCategories(month, limit));
     }
@@ -64,7 +67,8 @@ public class AnalyticsRestController {
     }
 
     @GetMapping("/budget/{budgetId}")
-    public ResponseEntity<CategoryBudgetStatusDto> getCategoryBudgetStatus(@PathVariable UUID budgetId) {
+    public ResponseEntity<CategoryBudgetStatusDto> getCategoryBudgetStatus(
+            @PathVariable UUID budgetId) {
         return ResponseEntity.ok(analyticsService.getCategoryBudgetStatus(budgetId));
     }
 

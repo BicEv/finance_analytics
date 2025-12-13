@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,11 +17,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import jakarta.validation.Valid;
 import ru.bicev.finance_analytics.dto.CategoryDto;
 import ru.bicev.finance_analytics.dto.CategoryRequest;
 import ru.bicev.finance_analytics.service.CategoryService;
 import ru.bicev.finance_analytics.util.CategoryType;
 
+@Validated
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryRestController {
@@ -32,7 +35,7 @@ public class CategoryRestController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDto> createCategory(@RequestBody CategoryRequest request) {
+    public ResponseEntity<CategoryDto> createCategory(@RequestBody @Valid CategoryRequest request) {
         CategoryDto created = categoryService.createCategory(request);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("{id}")
@@ -62,7 +65,7 @@ public class CategoryRestController {
 
     @PutMapping("/{categoryId}")
     public ResponseEntity<CategoryDto> updateCategory(@PathVariable UUID categoryId,
-            @RequestBody CategoryRequest request) {
+            @RequestBody @Valid CategoryRequest request) {
         CategoryDto updated = categoryService.updateCategory(categoryId, request);
         return ResponseEntity.ok(updated);
     }

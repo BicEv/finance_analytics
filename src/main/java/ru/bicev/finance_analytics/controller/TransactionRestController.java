@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import jakarta.validation.Valid;
 import ru.bicev.finance_analytics.dto.TransactionDto;
 import ru.bicev.finance_analytics.dto.TransactionRequest;
 import ru.bicev.finance_analytics.service.TransactionService;
 
+@Validated
 @RestController
 @RequestMapping("/api/transactions")
 public class TransactionRestController {
@@ -32,7 +35,7 @@ public class TransactionRestController {
     }
 
     @PostMapping
-    public ResponseEntity<TransactionDto> createTransaction(@RequestBody TransactionRequest request) {
+    public ResponseEntity<TransactionDto> createTransaction(@RequestBody @Valid TransactionRequest request) {
         TransactionDto created = transactionService.createTransaction(request);
         URI uri = ServletUriComponentsBuilder
                 .fromCurrentRequest()

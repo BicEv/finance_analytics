@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import jakarta.validation.Valid;
 import ru.bicev.finance_analytics.dto.BudgetDto;
 import ru.bicev.finance_analytics.dto.BudgetRequest;
 import ru.bicev.finance_analytics.service.BudgetService;
 
+@Validated
 @RestController
 @RequestMapping("/api/budgets")
 public class BudgetRestController {
@@ -32,7 +35,7 @@ public class BudgetRestController {
     }
 
     @PostMapping
-    public ResponseEntity<BudgetDto> createBudget(@RequestBody BudgetRequest request) {
+    public ResponseEntity<BudgetDto> createBudget(@RequestBody @Valid BudgetRequest request) {
         BudgetDto created = budgetService.createBudget(request);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("{id}")
@@ -59,7 +62,7 @@ public class BudgetRestController {
     }
 
     @PutMapping("/{budgetId}")
-    public ResponseEntity<BudgetDto> updateBudget(@PathVariable UUID budgetId, @RequestBody BudgetRequest request) {
+    public ResponseEntity<BudgetDto> updateBudget(@PathVariable UUID budgetId, @RequestBody @Valid BudgetRequest request) {
         BudgetDto updated = budgetService.updateBudget(budgetId, request);
         return ResponseEntity.ok(updated);
     }
