@@ -64,6 +64,7 @@ public class CategoryService {
                 .orElseThrow(() -> new NotFoundException("Category not found"));
 
         category.setName(request.name());
+        category.setType(request.type());
         category.setColor(request.color());
 
         return toDto(categoryRepository.save(category));
