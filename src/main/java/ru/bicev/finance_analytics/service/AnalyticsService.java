@@ -30,6 +30,9 @@ import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
 import ru.bicev.finance_analytics.repo.TransactionRepository;
 import ru.bicev.finance_analytics.util.CategoryType;
 
+/**
+ * Сервис, выполняющий аналитику расходов для текущего пользователя
+ */
 @Service
 public class AnalyticsService {
 
@@ -53,7 +56,12 @@ public class AnalyticsService {
         }
 
         /**
-         * Траты по категориям за период
+         * Возвращает список категорий расходов за указанный месяц.
+         * <p>
+         * Категории сортируются по убыванию суммы расхода.
+         * 
+         * @param month месяц, за который рассчитываются расходы
+         * @return список всех категорий за месяц с суммой расходов на них
          */
         public List<CategoryExpenseDto> getExpensesByCategory(YearMonth month) {
                 List<Transaction> transactions = getExpensesAndMonth(month);
@@ -75,7 +83,15 @@ public class AnalyticsService {
         }
 
         /**
-         * Топ N категорий по тратам
+         * Возвращает список топ-категорий расходов за указанный месяц
+         * <p>
+         * Категории сортируются в порядке убывания общей суммы расходов
+         * Размер возвращаемого списка ограничен параметром {@code limit}
+         * 
+         * @param month месяц, за который рассчитываются расходы
+         * @param limit максимальное количество категорий в результате
+         * @return список наиболее затратных категорий
+         * @throws IllegalArgumentException если {@code limit} меньше или равен нулю
          */
         public List<TopCategoryDto> getTopCategories(YearMonth month, int limit) {
 
@@ -89,7 +105,10 @@ public class AnalyticsService {
         }
 
         /**
-         * Траты по дням (для графиков)
+         * Возвращает список расходов за указанный месяц по дням трат
+         * 
+         * @param month месяц, за который рассчитываются расходы
+         * @return список трат за укзанный месяц по дням
          */
         public List<DailyExpenseDto> getDailyExpenses(YearMonth month) {
                 List<Transaction> transactions = getExpensesAndMonth(month);
@@ -108,7 +127,11 @@ public class AnalyticsService {
         }
 
         /**
-         * Траты по месяцам (MM.yyyy → total)
+         * Возвращает список расходов за указанный период по месяцам в формате "MM.yyyy"
+         * 
+         * @param range временной период, за который рассчитваются расходы
+         * @return спиоск трат сгруппированных по месяцам 
+         * @throws IllegalStateException если дата начала периода позднее даты окончания периода
          */
         public List<MonthlyExpenseDto> getMonthlyExpenses(DateRange range) {
                 if (range.start().isAfter(range.end())) {
@@ -134,7 +157,10 @@ public class AnalyticsService {
         }
 
         /**
-         * Общие суммы: расходы, доходы, баланс
+         * Возвращает поступления, траты и баланс за указанный месяц
+         * 
+         * @param month месяц, за который рассчитываются транзакции
+         * @return дто, в котором укзаны поступления, расходы и баланс за указанный месяц
          */
         public SummaryDto getSummary(YearMonth month) {
                 List<Transaction> transactions = getTransactionsForMonth(month);
@@ -158,7 +184,11 @@ public class AnalyticsService {
         }
 
         /**
-         * Аналитика бюджета (сколько потрачено / какой процент)
+         * Возвращает данные для указанного бюджета (имя категории, лимит для категории, сколько потрачено и использованный процент)
+         * 
+         * @param budgetId идентификатор бюджета, для которого будет произведен рассчет
+         * @return дто, в котором указаны имя категории, лимит на категорию, сколько потрачено и использованный процент
+         * @throws NotFoundException если передан идентификатор для не существующего бюджета
          */
         public CategoryBudgetStatusDto getCategoryBudgetStatus(UUID budgetId) {
                 Long userId = getCurrentUserId();
@@ -194,7 +224,9 @@ public class AnalyticsService {
         }
 
         /**
-         * Прогноз затрат на основе RT
+         * Возвращает список пронозируемых трат на основе рекуррентных платежей в формате "MM.yyyy"
+         * 
+         * @return список пргнозируемых расходов за месяц
          */
         public List<RecurringForecastDto> getUpcomingRecurringPayments() {
                 Long userId = getCurrentUserId();
@@ -216,18 +248,35 @@ public class AnalyticsService {
                                 .map(e -> new RecurringForecastDto(e.getKey(), e.getValue().setScale(2))).toList();
         }
 
+        /**
+         * Служебный метод, возвращающий список транзакций за указанный месяц
+         * 
+         * @param month месяц, за который получаются транзакции
+         * @return список транзакций за указанный месяц
+         */
         private List<Transaction> getTransactionsForMonth(YearMonth month) {
                 Long userId = getCurrentUserId();
                 return transactionRepository.findAllByUserIdAndDateBetween(userId,
                                 month.atDay(1), month.atEndOfMonth());
         }
 
+        /**
+         * Служебный метод, возвращающий список расходов за указанный месяц
+         * 
+         * @param month месяц, за который получаются транзакции
+         * @return список расходов, за указанный месяц
+         */
         private List<Transaction> getExpensesAndMonth(YearMonth month) {
                 Long userId = getCurrentUserId();
                 return transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
                                 CategoryType.EXPENSE, month.atDay(1), month.atEndOfMonth());
         }
 
+        /**
+         * Служебный метод, возвращающий идентификатор текущего пользователя
+         * 
+         * @return возвращает идентификатор текущего пользователя
+         */
         private Long getCurrentUserId() {
                 return userService.getCurrentUser().getId();
         }

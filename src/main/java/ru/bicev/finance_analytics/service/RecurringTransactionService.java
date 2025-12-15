@@ -21,6 +21,9 @@ import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
 
+/**
+ * Сервис управляющий рекуррентными транзакциями пользователя
+ */
 @Service
 public class RecurringTransactionService {
 
@@ -37,6 +40,13 @@ public class RecurringTransactionService {
         this.recurringTransactionRepository = recurringTransactionRepository;
     }
 
+    /**
+     * Создает новую рекуррентную транзакцию
+     * @param request запрос, содержащий данные для создания новой рекуррентной транзакции
+     * @return дто, содержащее данные созданной рекуррентной транзакции
+     * @throws NotFoundException если указанная в запросе категория не существует
+     * @throws IllegalArgumentException если дата следующего списания создаваемой транзакции меньше текущей даты
+     */
     @Transactional
     public RecurringTransactionDto createTransaction(RecurringTransactionRequest request) {
         User user = getCurrentUser();
@@ -60,6 +70,10 @@ public class RecurringTransactionService {
         return toDto(recurringTransactionRepository.save(transaction));
     }
 
+    /**
+     * Возвращает все рекуррентные транзакции текущего пользователя
+     * @return список всех рекуррентных транзакций текущего пользователя
+     */
     public List<RecurringTransactionDto> getAllRecurringTransactions() {
         Long userId = getCurrentUserId();
         logger.debug("getAllRecurringTransactions() for user: {}", userId);
@@ -68,6 +82,11 @@ public class RecurringTransactionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает список всех рекуррентных транзакций текущего пользователя, дата следующего списания которых меньше или равна указанной
+     * @param date дата, по которой получается список рекуррентных транзакций
+     * @return список всех рекуррентных транзакций до укзанной даты включительно
+     */
     public List<RecurringTransactionDto> getAllRecurringTransactionsAndDate(LocalDate date) {
         Long userId = getCurrentUserId();
 
@@ -77,6 +96,12 @@ public class RecurringTransactionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает рекуррентную транзакцию по ее идентификатору
+     * @param transactionId идентификатор искомой транзакции
+     * @return дто, содержащее данные искомой транзакции
+     * @throws NotFoundException если транзакции с указанным идентификатором не существует
+     */
     public RecurringTransactionDto getTransactionById(UUID transactionId) {
 
         RecurringTransaction transaction = recurringTransactionRepository
@@ -87,6 +112,13 @@ public class RecurringTransactionService {
         return toDto(transaction);
     }
 
+    /**
+     * Изменяет рекуррентную транзакцию по ее идентфикатору
+     * @param transactionId идентификатор рекуррентной транзакции, подлежащей изменению
+     * @param request запрос, содеражащий данные для изменения
+     * @return дто, содержащее данные измененной транзкациии
+     * @throws NotFoundException если транзакции с указанным идентификатором не существует
+     */
     @Transactional
     public RecurringTransactionDto updateTransaction(UUID transactionId, RecurringTransactionRequest request) {
         Long userId = getCurrentUserId();
@@ -121,6 +153,11 @@ public class RecurringTransactionService {
         return toDto(recurringTransactionRepository.save(transaction));
     }
 
+    /**
+     * Удаляет рекуррентную транзакцию по ее идентификатору
+     * @param transactionId идентификатор транзакции, подлежащей удалению
+     * @throws NotFoundException если транзакции с указанным идентификатором не существует
+     */
     @Transactional
     public void deleteTransaction(UUID transactionId) {
         RecurringTransaction transaction = recurringTransactionRepository
@@ -130,28 +167,58 @@ public class RecurringTransactionService {
         recurringTransactionRepository.delete(transaction);
     }
 
+    /**
+     * Возвращает список всех рекуррентных транзакций, у которых дата следующего списания меньше или равна указанной
+     * @param now дата, до которой ищутся транщакции
+     * @return список всех транзакций, у которых дата следующего списания меньше или равна указанной
+     */
     public List<RecurringTransaction> findAllActiveByNextExecutionDateBefore(LocalDate now) {
         return recurringTransactionRepository.findAllByActiveAndNextExecutionDateLessThanEqual(true, now);
     }
 
+    /**
+     * Служебный метод, который сохраняет рекуррентную транзакцию
+     * @param transaction транзакция, которую нужно сохранить
+     * @return сохраненную транзакцию
+     */
     @Transactional
     public RecurringTransaction save(RecurringTransaction transaction) {
         return recurringTransactionRepository.save(transaction);
     }
 
+    /**
+     * Служебный метод, который возвращает текущего пользователя
+     * @return текущий пользователь
+     */
     private User getCurrentUser() {
         return userService.getCurrentUser();
     }
 
+    /**
+     * Служебный метод, который возвращает идентификатор текущего пользователя
+     * @return идетнификатор текущего пользователя
+     */
     private Long getCurrentUserId() {
         return userService.getCurrentUser().getId();
     }
 
+    /**
+     * Служебный метод, который возвращает категорию по ее идентификатору и идентификатору пользователя
+     * @param categoryId идентификатор искомой категории
+     * @param userId идентификатор пользователя, которому принадлежит категория
+     * @return категория с указанным идентификатором
+     * @throws NotFoundException если категория с данными параметрами не существует
+     */
     private Category getCategory(UUID categoryId, Long userId) {
         return categoryRepository.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
     }
 
+    /**
+     * Служебный метод преобразующий рекуррентную тразакцию-сущность в рекуррентную транзакцию дто
+     * @param transaction сущность для преобразования
+     * @return дто соответствующее данной сущности
+     */
     private RecurringTransactionDto toDto(RecurringTransaction transaction) {
         return new RecurringTransactionDto(
                 transaction.getId(),

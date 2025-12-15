@@ -21,6 +21,9 @@ import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.TransactionRepository;
 
+/**
+ * Сервис для управления транзакциями пользователя
+ */
 @Service
 public class TransactionService {
 
@@ -37,6 +40,12 @@ public class TransactionService {
         this.categoryRepository = categoryRepository;
     }
 
+    /**
+     * Создает новую транзкацию для текущего пользователя
+     * @param request запрос, содержащий данные новой транзакции
+     * @return дто, содержащее данные созданной транзакции
+     * @throws NotFoundException если категория укзанная в запросе не существует
+     */
     @Transactional
     public TransactionDto createTransaction(TransactionRequest request) {
         User user = getCurrentUser();
@@ -55,6 +64,13 @@ public class TransactionService {
         return toDto(transactionRepository.save(transaction));
     }
 
+    /**
+     * Служебный метод для создания новой транзакции для укзанного пользователя
+     * @param user пользователь, для которого создается транзакция
+     * @param request запрос, содержащий данные для создания транзакции
+     * @return созданная транзакция
+     * @throws NotFoundException если категория укзанная в запросе не существует
+     */
     @Transactional
     public Transaction createTransactionForUser(User user, TransactionRequest request) {
         Category category = getCategory(request.categoryId(), user.getId());
@@ -72,6 +88,10 @@ public class TransactionService {
         return transactionRepository.save(transaction);
     }
 
+    /**
+     * Возвращает все транзакции текущего пользователя
+     * @return список всех транзакций текущего пользователя
+     */
     public List<TransactionDto> getTransactions() {
         logger.debug("getTransactions()");
         return transactionRepository.findAllByUserId(getCurrentUserId()).stream()
@@ -79,6 +99,13 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает все транзакции текущего пользователя за указанный период
+     * @param from дата начала периода
+     * @param to дата конца периода
+     * @return список всех транзакций, относящихся к этому периоду
+     * @throws IllegalArgumentException если {@code from} идет после {@code to} хронологически
+     */
     public List<TransactionDto> getTransactionsByDateBetween(LocalDate from, LocalDate to) {
 
         if (from.isAfter(to)) {
@@ -92,6 +119,12 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает транзакцию по ее идентификатору
+     * @param transactionId идентификатор транзакции
+     * @return дто, содержащее данные искомой транзакции
+     * @throws NotFoundException если транзакция с указанным {@code transactionId} не существует
+     */
     public TransactionDto getTransactionById(UUID transactionId) {
         Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
@@ -99,6 +132,13 @@ public class TransactionService {
         return toDto(transaction);
     }
 
+    /**
+     * Изменяет транзакция с указанным идентификатором
+     * @param transactionId идентификатор транзакции, подлежащей изменению
+     * @param request запрос, содержащий данные для изменения
+     * @return дто, с данными измененной транзакции
+     * @throws NotFoundException если транзакции с данным {@code transactionId} не существует
+     */
     @Transactional
     public TransactionDto updateTransaction(UUID transactionId, TransactionRequest request) {
         Long userId = getCurrentUserId();
@@ -128,6 +168,11 @@ public class TransactionService {
         return toDto(transactionRepository.save(transaction));
     }
 
+    /**
+     * Удаляет транзакцию с указанным идентификатором
+     * @param transactionId идентификатор транзакции, подлежащей удалению
+     * @throws NotFoundException если транзакции с данным {@code transactionId} не существует
+     */
     @Transactional
     public void deleteTransaction(UUID transactionId) {
 
@@ -137,19 +182,39 @@ public class TransactionService {
         transactionRepository.delete(transaction);
     }
 
+    /**
+     * Служебный метод возвращающий текущего пользователя
+     * @return текущий пользователь
+     */
     private User getCurrentUser() {
         return userService.getCurrentUser();
     }
 
+    /**
+     * Служебный метод возвращающий идентификатор текущего пользователя
+     * @return идентификатор пользователя
+     */
     private Long getCurrentUserId() {
         return userService.getCurrentUser().getId();
     }
 
+    /**
+     * Службный метод получающий категорию по ее идентификатору и идентификатору пользователя
+     * @param categoryId идентфикатор категории
+     * @param userId идентификатор пользователя
+     * @return найденная категория
+     * @throws NotFoundExcption если категории с {@code categoryId} и/или {@code userId} не существует
+     */
     private Category getCategory(UUID categoryId, Long userId) {
         return categoryRepository.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
     }
 
+    /**
+     * Служебный метод преобразующий транзакцию-сущность в транзакцию-дто
+     * @param transaction сущность для преобразования
+     * @return дто, содержащее данные сущности
+     */
     private TransactionDto toDto(Transaction transaction) {
         return new TransactionDto(
                 transaction.getId(),

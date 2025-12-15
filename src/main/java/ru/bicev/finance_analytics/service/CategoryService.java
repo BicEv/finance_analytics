@@ -18,6 +18,9 @@ import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.util.CategoryType;
 
+/**
+ * Сервис для управлениями категориями пользователя
+ */
 @Service
 public class CategoryService {
 
@@ -31,6 +34,12 @@ public class CategoryService {
         this.categoryRepository = categoryRepository;
     }
 
+    /**
+     * Создает новую каетгорию для текущего пользователя
+     * 
+     * @param request запрос, содержащий данные, необходимые для создания новой категории
+     * @return дто, содержащее данные созданной категории
+     */
     @Transactional
     public CategoryDto createCategory(CategoryRequest request) {
         User user = getCurrentUser();
@@ -47,6 +56,11 @@ public class CategoryService {
 
     }
 
+    /**
+     * Возвращает все категории для текущего пользователя
+     * 
+     * @return список всех категорий текущего пользователя
+     */
     public List<CategoryDto> getUserCategories() {
         Long userId = getUserId();
         logger.debug("getUserCategories() for user: {}", userId);
@@ -56,6 +70,13 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает категорию по ее идентификатору
+     * 
+     * @param categoryId идентификатор искомой категории
+     * @return дто, содержащее данные найденной категории
+     * @throws NotFoundException если категории с таким идентификатором не существует
+     */
     public CategoryDto getCategoryById(UUID categoryId) {
         Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
@@ -63,6 +84,13 @@ public class CategoryService {
         return toDto(category);
     }
 
+    /**
+     * Изменяет имя, тип, и цвет категории по ее идентификатору
+     * @param categoryId идентификатор категории, подлежащей изменению
+     * @param request запрос с данными для изменения категории
+     * @return дто, содержащее данные измененной категории
+     * @throws NotFoundException если категории с таким идентификатором не существует
+     */
     @Transactional
     public CategoryDto updateCategory(UUID categoryId, CategoryRequest request) {
         Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
@@ -75,6 +103,11 @@ public class CategoryService {
         return toDto(categoryRepository.save(category));
     }
 
+    /**
+     * Удаляет категорию по ее идентификатору
+     * @param categoryId идентфикатор категории, подлежащей удалению
+     * @throws NotFoundException если категории с таким идентификатором не существует
+     */
     @Transactional
     public void deleteCategory(UUID categoryId) {
         Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
@@ -83,26 +116,48 @@ public class CategoryService {
         categoryRepository.delete(category);
     }
 
+    /**
+     * Возвращает все категории с указанным типом
+     * @param type тип искомых категорий
+     * @return список всех категорий с указанным типом
+     */
     public List<CategoryDto> getCategoriesByType(CategoryType type) {
         return categoryRepository.findAllByUserIdAndType(getUserId(), type).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает все категории для текущего пользователя
+     * @return список всех категорий для текущего пользователя
+     */
     public List<CategoryDto> getAllCategoriesForUser() {
         return categoryRepository.findAllByUserId(getUserId()).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Служебный метод, возвращающий идентификатор текущего пользователя
+     * @return идентификатор текущего пользователя
+     */
     private Long getUserId() {
         return getCurrentUser().getId();
     }
 
+    /**
+     * Служебный метод, возвращающий текущего пользователя
+     * @return текущий пользователь
+     */
     private User getCurrentUser() {
         return userService.getCurrentUser();
     }
 
+    /**
+     * Служебный метод преобразующий категорию сущность в категорию дто
+     * @param category категория для преобразования
+     * @return преобразованная категория дто
+     */
     private CategoryDto toDto(Category category) {
         return new CategoryDto(
                 category.getId(),

@@ -21,6 +21,9 @@ import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.BudgetRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 
+/**
+ * Сервис для управления бюджетами пользователя
+ */
 @Service
 public class BudgetService {
 
@@ -37,6 +40,13 @@ public class BudgetService {
         this.userService = userService;
     }
 
+    /**
+     * Создает новый бюджет для текущего пользователя
+     * 
+     * @param request запрос, для создания нового бюджета
+     * @return дто, содержащее идетнификатор бюджета, имя категории, идентификатор категории, месяц и лимит для созданного бюджета
+     * @throws NotFoundException если в запросе передан идентификатор не существующей категории
+     */
     @Transactional
     public BudgetDto createBudget(BudgetRequest request) {
         User user = getCurrentUser();
@@ -55,6 +65,13 @@ public class BudgetService {
         return toDto(budgetRepository.save(budget));
     }
 
+    /**
+     * Возвращает бюджет по его идентификатору
+     * 
+     * @param budgetId идентификатор бюджета
+     * @return дто, содеражащее идетнификатор бюджета, имя категории, идентификатор категории, месяц и лимит найденного бюждета
+     * @throws NotFoundException если бюджета с указанным идентификатором не существует
+     */
     public BudgetDto getBudgetById(UUID budgetId) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
@@ -62,6 +79,11 @@ public class BudgetService {
         return toDto(budget);
     }
 
+    /**
+     * Возвращает все бюджеты для текущего пользователя
+     * 
+     * @return список всех дто бюджетов для текущего пользователя
+     */
     public List<BudgetDto> getAllBudgetsForUser() {
         logger.debug("getAllBudgetsForUser()");
         return budgetRepository.findAllByUserId(getCurrentUser().getId()).stream()
@@ -69,6 +91,12 @@ public class BudgetService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает все бюджеты для текущего пользователя за указанный месяц
+     * 
+     * @param month месяц, за который идет поиск бюджетов
+     * @return список всех дто бюджетов для текущего пользователя за указанный месяц
+     */
     public List<BudgetDto> getBudgetsForMonth(YearMonth month) {
         logger.debug("getBudgetsForMonth(): {}", month.toString());
         return budgetRepository.findByUserIdAndMonth(getCurrentUser().getId(), month).stream()
@@ -76,6 +104,14 @@ public class BudgetService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Изменяет месяц и лимит для указанного бюджета
+     * 
+     * @param budgetId идентификатор изменяемого бюджета
+     * @param request запрос с данными для изменения бюджета
+     * @return дто, содержащее данные измененного бюджета
+     * @throws NotFoundException если бюджета с указанным идентификатором не существует
+     */
     @Transactional
     public BudgetDto updateBudget(UUID budgetId, BudgetRequest request) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
@@ -86,6 +122,12 @@ public class BudgetService {
         return toDto(budgetRepository.save(budget));
     }
 
+    /**
+     * Удаляет бюджет с указанным идентификатором
+     * 
+     * @param budgetId идентификатор бюджета, подлежащего удалению
+     * @throws NotFoundException если бюджета с указанным идентификатором не существует 
+     */
     @Transactional
     public void deleteBudget(UUID budgetId) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
@@ -94,10 +136,19 @@ public class BudgetService {
         budgetRepository.delete(budget);
     }
 
+    /**
+     * Служебный метод, который получает теущего пользователя
+     * @return текущий пользователь
+     */
     private User getCurrentUser() {
         return userService.getCurrentUser();
     }
 
+    /**
+     * Служебный метод для преобразования сущности бюджета в дто бюджета
+     * @param budget сущность бюджета, которая должна быть перобразована
+     * @return дто бюджета, которое будет отдано пользователю
+     */
     private BudgetDto toDto(Budget budget) {
         return new BudgetDto(
                 budget.getId(),

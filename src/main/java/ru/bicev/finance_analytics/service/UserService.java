@@ -15,6 +15,7 @@ import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.repo.UserRepository;
 import ru.bicev.finance_analytics.security.CustomUserPrincipal;
 
+/**Сервис для управления пользователями */
 @Service
 public class UserService {
 
@@ -26,6 +27,12 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Создает или получает пользователя соответствующего провайдеру и OAuth2User
+     * @param provider провайдер данных аутенфикации
+     * @param oAuth2User пользователь аутентификации
+     * @return данные, соответсвеющие пользоваетлю в системе
+     */
     @Transactional
     public User getOrCreateOAuthUser(String provider, OAuth2User oAuth2User) {
         String providerId = extractProviderId(provider, oAuth2User);
@@ -57,6 +64,11 @@ public class UserService {
         return userRepository.save(newUser);
     }
 
+    /**
+     * Служебный метод, который возвращает текущего пользователя
+     * @return текущий пользователь в системе
+     * @throws IllegalStateException если текущий пользователь не аутентинфицирован
+     */
     public User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
@@ -66,6 +78,12 @@ public class UserService {
         return principal.getUser();
     }
 
+    /**
+     * Служебный метод извлекающий идентификатор провайдера
+     * @param provider данные провайдера аутентинфикации
+     * @param u пользователь аутентинфикации
+     * @return строка с идентификатором провайдера
+     */
     private String extractProviderId(String provider, OAuth2User u) {
         return switch (provider) {
             case "google" -> u.getAttribute("sub");
@@ -74,6 +92,12 @@ public class UserService {
         };
     }
 
+    /**
+     * Служебный метод для извлечения email из данных аутентинфикации
+     * @param provider данные провайдера аутентинфикации
+     * @param u пользователь аутентинфикации
+     * @return строка с email пользователя
+     */
     private String extractEmail(String provider, OAuth2User u) {
         return switch (provider) {
             case "google" -> u.getAttribute("email");
@@ -81,6 +105,12 @@ public class UserService {
         };
     }
 
+    /**
+     * Служебный метод для извлечения имени пользователя из данных аутентинфикации
+     * @param provider данные провайдера аутентинфикации
+     * @param u пользователь аутентинфикации
+     * @return строка с именем пользователя
+     */
     private String extractName(String provider, OAuth2User u) {
         return switch (provider) {
             case "google" -> u.getAttribute("name");
@@ -89,6 +119,12 @@ public class UserService {
         };
     }
 
+    /**
+     * Служебный метод для извлечения аватара пользователя из данных аутентинфикации
+     * @param provider данные провайдера аутентинфикации
+     * @param u пользователь аутентинфикации
+     * @return строка с адресом аватара пользователя
+     */
     private String extractAvatar(String provider, OAuth2User u) {
         return switch (provider) {
             case "google" -> u.getAttribute("picture");

@@ -17,6 +17,9 @@ import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.UserRepository;
 import ru.bicev.finance_analytics.util.Frequency;
 
+/**
+ * Сервис выполняющий обработку рекуррентных транзакций
+ */
 @Service
 public class RecurringExecutionService {
 
@@ -36,6 +39,13 @@ public class RecurringExecutionService {
         this.categoryRepository = categoryRepository;
     }
 
+    /**
+     * Метод, выполняющий создание обычных транзакций из рекуррентных
+     * <p>
+     * Метод создает обычные транзакции-расходы, если у реккурентной транзакции подошел срок платежа и она указана как активная.
+     * Обновляет следующий срок исполнения рекуррентной транзакции в соответствии с частотой ее списания
+     * @throws NotFoundException если у у рекуррентной транзакции нет родительской категории или пользователя в базе данных
+     */
     @Transactional
     public void executeDueTransactions() {
         LocalDate today = LocalDate.now();
@@ -68,6 +78,12 @@ public class RecurringExecutionService {
         }
     }
 
+    /**
+     * Служебный метод, вычисляющий дату следующего списания рекррентной транзакции в соотвествии с частотой списания
+     * @param current дата, необходимая для расчета следующей даты списания
+     * @param frequency частота списания
+     * @return дата следующего списания
+     */
     private LocalDate calculateNextDate(LocalDate current, Frequency frequency) {
         return switch (frequency) {
             case WEEKLY -> current.plusWeeks(1);
