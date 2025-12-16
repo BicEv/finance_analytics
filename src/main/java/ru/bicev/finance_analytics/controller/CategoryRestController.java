@@ -38,7 +38,7 @@ public class CategoryRestController {
     public ResponseEntity<CategoryDto> createCategory(@RequestBody @Valid CategoryRequest request) {
         CategoryDto created = categoryService.createCategory(request);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("{id}")
+                .path("/{id}")
                 .buildAndExpand(created.id())
                 .toUri();
         return ResponseEntity.created(uri).body(created);

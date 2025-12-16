@@ -38,7 +38,7 @@ public class BudgetRestController {
     public ResponseEntity<BudgetDto> createBudget(@RequestBody @Valid BudgetRequest request) {
         BudgetDto created = budgetService.createBudget(request);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("{id}")
+                .path("/{id}")
                 .buildAndExpand(created.id())
                 .toUri();
         return ResponseEntity.created(uri).body(created);
