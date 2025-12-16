@@ -1,5 +1,6 @@
 package ru.bicev.finance_analytics.service;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -44,8 +45,10 @@ public class BudgetService {
      * Создает новый бюджет для текущего пользователя
      * 
      * @param request запрос, для создания нового бюджета
-     * @return дто, содержащее идетнификатор бюджета, имя категории, идентификатор категории, месяц и лимит для созданного бюджета
-     * @throws NotFoundException если в запросе передан идентификатор не существующей категории
+     * @return дто, содержащее идетнификатор бюджета, имя категории, идентификатор
+     *         категории, месяц и лимит для созданного бюджета
+     * @throws NotFoundException если в запросе передан идентификатор не
+     *                           существующей категории
      */
     @Transactional
     public BudgetDto createBudget(BudgetRequest request) {
@@ -69,8 +72,10 @@ public class BudgetService {
      * Возвращает бюджет по его идентификатору
      * 
      * @param budgetId идентификатор бюджета
-     * @return дто, содеражащее идетнификатор бюджета, имя категории, идентификатор категории, месяц и лимит найденного бюждета
-     * @throws NotFoundException если бюджета с указанным идентификатором не существует
+     * @return дто, содеражащее идетнификатор бюджета, имя категории, идентификатор
+     *         категории, месяц и лимит найденного бюждета
+     * @throws NotFoundException если бюджета с указанным идентификатором не
+     *                           существует
      */
     public BudgetDto getBudgetById(UUID budgetId) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
@@ -84,6 +89,7 @@ public class BudgetService {
      * 
      * @return список всех дто бюджетов для текущего пользователя
      */
+    @Transactional(readOnly = true)
     public List<BudgetDto> getAllBudgetsForUser() {
         logger.debug("getAllBudgetsForUser()");
         return budgetRepository.findAllByUserId(getCurrentUser().getId()).stream()
@@ -97,6 +103,7 @@ public class BudgetService {
      * @param month месяц, за который идет поиск бюджетов
      * @return список всех дто бюджетов для текущего пользователя за указанный месяц
      */
+    @Transactional(readOnly = true)
     public List<BudgetDto> getBudgetsForMonth(YearMonth month) {
         logger.debug("getBudgetsForMonth(): {}", month.toString());
         return budgetRepository.findByUserIdAndMonth(getCurrentUser().getId(), month).stream()
@@ -108,9 +115,10 @@ public class BudgetService {
      * Изменяет месяц и лимит для указанного бюджета
      * 
      * @param budgetId идентификатор изменяемого бюджета
-     * @param request запрос с данными для изменения бюджета
+     * @param request  запрос с данными для изменения бюджета
      * @return дто, содержащее данные измененного бюджета
-     * @throws NotFoundException если бюджета с указанным идентификатором не существует
+     * @throws NotFoundException если бюджета с указанным идентификатором не
+     *                           существует
      */
     @Transactional
     public BudgetDto updateBudget(UUID budgetId, BudgetRequest request) {
@@ -126,7 +134,8 @@ public class BudgetService {
      * Удаляет бюджет с указанным идентификатором
      * 
      * @param budgetId идентификатор бюджета, подлежащего удалению
-     * @throws NotFoundException если бюджета с указанным идентификатором не существует 
+     * @throws NotFoundException если бюджета с указанным идентификатором не
+     *                           существует
      */
     @Transactional
     public void deleteBudget(UUID budgetId) {
@@ -137,7 +146,33 @@ public class BudgetService {
     }
 
     /**
+     * Метод для создания бюджетов для указанного пользователя и категории
+     * 
+     * @param user     пользователь для которого создается бюджет
+     * @param category категория бюджета
+     * @param amount   лимит расходов для бюджета
+     * @param month    месяц бюджета
+     */
+    @Transactional
+    public void createBudgetForCategoryAndUser(User user, Category category, BigDecimal amount, YearMonth month) {
+        if (budgetRepository.existsByUserIdAndCategoryIdAndMonth(user.getId(), category.getId(), month)) {
+            return;
+        }
+
+        Budget budget = Budget.builder()
+                .user(user)
+                .category(category)
+                .limitAmount(amount)
+                .month(month)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        budgetRepository.save(budget);
+    }
+
+    /**
      * Служебный метод, который получает теущего пользователя
+     * 
      * @return текущий пользователь
      */
     private User getCurrentUser() {
@@ -146,6 +181,7 @@ public class BudgetService {
 
     /**
      * Служебный метод для преобразования сущности бюджета в дто бюджета
+     * 
      * @param budget сущность бюджета, которая должна быть перобразована
      * @return дто бюджета, которое будет отдано пользователю
      */
@@ -158,4 +194,5 @@ public class BudgetService {
                 budget.getLimitAmount());
     }
 
+    
 }
