@@ -92,6 +92,7 @@ public class TransactionService {
      * Возвращает все транзакции текущего пользователя
      * @return список всех транзакций текущего пользователя
      */
+    @Transactional(readOnly = true)
     public List<TransactionDto> getTransactions() {
         logger.debug("getTransactions()");
         return transactionRepository.findAllByUserId(getCurrentUserId()).stream()
@@ -106,6 +107,7 @@ public class TransactionService {
      * @return список всех транзакций, относящихся к этому периоду
      * @throws IllegalArgumentException если {@code from} идет после {@code to} хронологически
      */
+    @Transactional(readOnly = true)
     public List<TransactionDto> getTransactionsByDateBetween(LocalDate from, LocalDate to) {
 
         if (from.isAfter(to)) {

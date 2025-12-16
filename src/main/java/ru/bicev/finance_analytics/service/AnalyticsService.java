@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import ru.bicev.finance_analytics.dto.CategoryBudgetStatusDto;
 import ru.bicev.finance_analytics.dto.CategoryExpenseDto;
@@ -34,6 +35,7 @@ import ru.bicev.finance_analytics.util.CategoryType;
  * Сервис, выполняющий аналитику расходов для текущего пользователя
  */
 @Service
+@Transactional(readOnly = true)
 public class AnalyticsService {
 
         private final TransactionRepository transactionRepository;

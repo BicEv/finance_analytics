@@ -74,6 +74,7 @@ public class RecurringTransactionService {
      * Возвращает все рекуррентные транзакции текущего пользователя
      * @return список всех рекуррентных транзакций текущего пользователя
      */
+    @Transactional(readOnly = true)
     public List<RecurringTransactionDto> getAllRecurringTransactions() {
         Long userId = getCurrentUserId();
         logger.debug("getAllRecurringTransactions() for user: {}", userId);
@@ -87,6 +88,7 @@ public class RecurringTransactionService {
      * @param date дата, по которой получается список рекуррентных транзакций
      * @return список всех рекуррентных транзакций до укзанной даты включительно
      */
+    @Transactional(readOnly = true)
     public List<RecurringTransactionDto> getAllRecurringTransactionsAndDate(LocalDate date) {
         Long userId = getCurrentUserId();
 
@@ -172,6 +174,7 @@ public class RecurringTransactionService {
      * @param now дата, до которой ищутся транщакции
      * @return список всех транзакций, у которых дата следующего списания меньше или равна указанной
      */
+    @Transactional(readOnly = true)
     public List<RecurringTransaction> findAllActiveByNextExecutionDateBefore(LocalDate now) {
         return recurringTransactionRepository.findAllByActiveAndNextExecutionDateLessThanEqual(true, now);
     }
