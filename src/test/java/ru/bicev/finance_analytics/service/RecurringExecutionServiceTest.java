@@ -1,4 +1,4 @@
-package ru.bicev.finance_analytics;
+package ru.bicev.finance_analytics.service;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,9 +22,6 @@ import ru.bicev.finance_analytics.entity.RecurringTransaction;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.UserRepository;
-import ru.bicev.finance_analytics.service.RecurringExecutionService;
-import ru.bicev.finance_analytics.service.RecurringTransactionService;
-import ru.bicev.finance_analytics.service.TransactionService;
 import ru.bicev.finance_analytics.util.Frequency;
 
 @ExtendWith(MockitoExtension.class)

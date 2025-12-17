@@ -1,4 +1,4 @@
-package ru.bicev.finance_analytics;
+package ru.bicev.finance_analytics.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -26,8 +26,6 @@ import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.BudgetRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
-import ru.bicev.finance_analytics.service.BudgetService;
-import ru.bicev.finance_analytics.service.UserService;
 
 @ExtendWith(MockitoExtension.class)
 public class BudgetServiceTest {
@@ -61,7 +59,7 @@ public class BudgetServiceTest {
                                 .user(user)
                                 .build();
 
-                when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUser()).thenReturn(user);
         }
 
         // --------------------------------------------------------
@@ -149,8 +147,10 @@ public class BudgetServiceTest {
         @Test
         void testGetAllBudgetsForUser_success() {
                 amount = BigDecimal.valueOf(150).setScale(2, RoundingMode.HALF_UP);
-                Budget b1 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).limitAmount(amount).build();
-                Budget b2 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).limitAmount(amount).build();
+                Budget b1 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).limitAmount(amount)
+                                .build();
+                Budget b2 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).limitAmount(amount)
+                                .build();
 
                 when(budgetRepository.findAllByUserId(user.getId()))
                                 .thenReturn(List.of(b1, b2));
@@ -257,4 +257,26 @@ public class BudgetServiceTest {
                 assertThrows(NotFoundException.class,
                                 () -> budgetService.deleteBudget(id));
         }
+
+        // --------------------------------------------------------
+        // createBudgetForCategoryAndUser()
+        // --------------------------------------------------------
+        @Test
+        void createBudgetForCategoryAndUser_success() {
+                when(budgetRepository.existsByUserIdAndCategoryIdAndMonth(user.getId(), category.getId(),
+                                YearMonth.now())).thenReturn(false);
+
+                budgetService.createBudgetForCategoryAndUser(user, category, amount, YearMonth.now());
+                verify(budgetRepository, times(1)).save(any(Budget.class));
+        }
+
+        @Test
+        void createBudgetForCategoryAndUser_budgetExists() {
+                when(budgetRepository.existsByUserIdAndCategoryIdAndMonth(user.getId(), category.getId(),
+                                YearMonth.now())).thenReturn(true);
+
+                budgetService.createBudgetForCategoryAndUser(user, category, amount, YearMonth.now());
+                verify(budgetRepository, times(0)).save(any(Budget.class));
+        }
+
 }

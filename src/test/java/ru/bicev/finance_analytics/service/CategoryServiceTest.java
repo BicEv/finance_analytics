@@ -1,4 +1,4 @@
-package ru.bicev.finance_analytics;
+package ru.bicev.finance_analytics.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,8 +14,6 @@ import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
-import ru.bicev.finance_analytics.service.CategoryService;
-import ru.bicev.finance_analytics.service.UserService;
 import ru.bicev.finance_analytics.util.CategoryType;
 
 import java.util.*;

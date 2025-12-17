@@ -1,4 +1,4 @@
-package ru.bicev.finance_analytics;
+package ru.bicev.finance_analytics.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -25,8 +25,6 @@ import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
 import ru.bicev.finance_analytics.repo.TransactionRepository;
-import ru.bicev.finance_analytics.service.TransactionService;
-import ru.bicev.finance_analytics.service.UserService;
 
 @ExtendWith(MockitoExtension.class)
 public class TransactionServiceTest {

@@ -1,4 +1,4 @@
-package ru.bicev.finance_analytics;
+package ru.bicev.finance_analytics.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -29,7 +29,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.repo.UserRepository;
 import ru.bicev.finance_analytics.security.CustomUserPrincipal;
-import ru.bicev.finance_analytics.service.UserService;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {

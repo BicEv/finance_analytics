@@ -1,4 +1,4 @@
-package ru.bicev.finance_analytics;
+package ru.bicev.finance_analytics.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -11,7 +11,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,8 +31,6 @@ import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.BudgetRepository;
 import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
 import ru.bicev.finance_analytics.repo.TransactionRepository;
-import ru.bicev.finance_analytics.service.AnalyticsService;
-import ru.bicev.finance_analytics.service.UserService;
 import ru.bicev.finance_analytics.util.CategoryType;
 import ru.bicev.finance_analytics.util.Frequency;
 
