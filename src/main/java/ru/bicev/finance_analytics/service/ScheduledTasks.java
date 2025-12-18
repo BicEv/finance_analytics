@@ -42,7 +42,7 @@ public class ScheduledTasks {
     public void generateMonthlyBudgets() {
         YearMonth currentMonth = YearMonth.now();
 
-        List<BudgetTemplate> templates = budgetTemplateRepository.findActiveTrue();
+        List<BudgetTemplate> templates = budgetTemplateRepository.findByActiveTrue();
 
         for (BudgetTemplate template : templates) {
             budgetService.createBudgetForCategoryAndUser(

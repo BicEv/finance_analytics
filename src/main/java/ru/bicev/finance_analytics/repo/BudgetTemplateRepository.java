@@ -10,7 +10,7 @@ import ru.bicev.finance_analytics.entity.BudgetTemplate;
 
 public interface BudgetTemplateRepository extends JpaRepository<BudgetTemplate, UUID> {
 
-    List<BudgetTemplate> findActiveTrue();
+    List<BudgetTemplate> findByActiveTrue();
 
     List<BudgetTemplate> findAllByUserId(Long userId);
 
