@@ -190,7 +190,7 @@ public class CategoryRestControllerIT {
     }
 
     // ---------------------
-    // updateCategory()
+    // deleteCategory()
     // ---------------------
     @Test
     void deleteCategory_success() throws Exception {
