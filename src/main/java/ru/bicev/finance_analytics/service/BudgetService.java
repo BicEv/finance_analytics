@@ -126,17 +126,25 @@ public class BudgetService {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
         logger.debug("updateBudget() with id: {}", budgetId.toString());
+
         if (request.categoryId() != null) {
             Category category = categoryRepository.findByIdAndUserId(request.categoryId(), getCurrentUser().getId())
                     .orElseThrow(() -> new NotFoundException("Category not found"));
             budget.setCategory(category);
         }
+
         if (request.month() != null) {
             budget.setMonth(request.month());
         }
+
+
         if (request.limitAmount() != null) {
+            if (request.limitAmount().compareTo(BigDecimal.ZERO) != 1) {
+                throw new IllegalArgumentException("Limit amount cannot be zero or less");
+            }
             budget.setLimitAmount(request.limitAmount().setScale(2, RoundingMode.HALF_UP));
         }
+        
         return toDto(budgetRepository.save(budget));
     }
 
