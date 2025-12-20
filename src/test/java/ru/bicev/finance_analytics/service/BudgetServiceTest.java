@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import ru.bicev.finance_analytics.dto.BudgetDto;
 import ru.bicev.finance_analytics.dto.BudgetRequest;
+import ru.bicev.finance_analytics.dto.BudgetUpdateRequest;
 import ru.bicev.finance_analytics.entity.Budget;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.User;
@@ -198,8 +199,8 @@ public class BudgetServiceTest {
                                 .limitAmount(BigDecimal.valueOf(200.0))
                                 .build();
 
-                BudgetRequest request = new BudgetRequest(
-                                category.getId(),
+                BudgetUpdateRequest request = new BudgetUpdateRequest(
+                                null,
                                 newMonth,
                                 amount);
 
@@ -221,7 +222,7 @@ public class BudgetServiceTest {
         void testUpdateBudget_notFound() {
                 UUID id = UUID.randomUUID();
                 amount = BigDecimal.valueOf(123).setScale(2, RoundingMode.HALF_UP);
-                BudgetRequest request = new BudgetRequest(UUID.randomUUID(), YearMonth.now(), amount);
+                BudgetUpdateRequest request = new BudgetUpdateRequest(null, YearMonth.now(), amount);
 
                 when(budgetRepository.findByIdAndUserId(id, user.getId()))
                                 .thenReturn(Optional.empty());

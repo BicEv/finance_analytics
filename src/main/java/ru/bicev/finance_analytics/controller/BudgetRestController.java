@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import jakarta.validation.Valid;
 import ru.bicev.finance_analytics.dto.BudgetDto;
 import ru.bicev.finance_analytics.dto.BudgetRequest;
+import ru.bicev.finance_analytics.dto.BudgetUpdateRequest;
 import ru.bicev.finance_analytics.service.BudgetService;
 
 @Validated
@@ -62,7 +63,7 @@ public class BudgetRestController {
     }
 
     @PutMapping("/{budgetId}")
-    public ResponseEntity<BudgetDto> updateBudget(@PathVariable UUID budgetId, @RequestBody @Valid BudgetRequest request) {
+    public ResponseEntity<BudgetDto> updateBudget(@PathVariable UUID budgetId, @RequestBody BudgetUpdateRequest request) {
         BudgetDto updated = budgetService.updateBudget(budgetId, request);
         return ResponseEntity.ok(updated);
     }

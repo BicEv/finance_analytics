@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ru.bicev.finance_analytics.dto.BudgetDto;
 import ru.bicev.finance_analytics.dto.BudgetRequest;
+import ru.bicev.finance_analytics.dto.BudgetUpdateRequest;
 import ru.bicev.finance_analytics.entity.Budget;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.User;
@@ -121,12 +122,21 @@ public class BudgetService {
      *                           существует
      */
     @Transactional
-    public BudgetDto updateBudget(UUID budgetId, BudgetRequest request) {
+    public BudgetDto updateBudget(UUID budgetId, BudgetUpdateRequest request) {
         Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
         logger.debug("updateBudget() with id: {}", budgetId.toString());
-        budget.setMonth(request.month());
-        budget.setLimitAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
+        if (request.categoryId() != null) {
+            Category category = categoryRepository.findByIdAndUserId(request.categoryId(), getCurrentUser().getId())
+                    .orElseThrow(() -> new NotFoundException("Category not found"));
+            budget.setCategory(category);
+        }
+        if (request.month() != null) {
+            budget.setMonth(request.month());
+        }
+        if (request.limitAmount() != null) {
+            budget.setLimitAmount(request.limitAmount().setScale(2, RoundingMode.HALF_UP));
+        }
         return toDto(budgetRepository.save(budget));
     }
 
@@ -194,5 +204,4 @@ public class BudgetService {
                 budget.getLimitAmount());
     }
 
-    
 }
