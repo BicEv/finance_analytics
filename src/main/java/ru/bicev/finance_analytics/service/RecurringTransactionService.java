@@ -42,10 +42,14 @@ public class RecurringTransactionService {
 
     /**
      * Создает новую рекуррентную транзакцию
-     * @param request запрос, содержащий данные для создания новой рекуррентной транзакции
+     * 
+     * @param request запрос, содержащий данные для создания новой рекуррентной
+     *                транзакции
      * @return дто, содержащее данные созданной рекуррентной транзакции
-     * @throws NotFoundException если указанная в запросе категория не существует
-     * @throws IllegalArgumentException если дата следующего списания создаваемой транзакции меньше текущей даты
+     * @throws NotFoundException        если указанная в запросе категория не
+     *                                  существует
+     * @throws IllegalArgumentException если дата следующего списания создаваемой
+     *                                  транзакции меньше текущей даты
      */
     @Transactional
     public RecurringTransactionDto createTransaction(RecurringTransactionRequest request) {
@@ -72,6 +76,7 @@ public class RecurringTransactionService {
 
     /**
      * Возвращает все рекуррентные транзакции текущего пользователя
+     * 
      * @return список всех рекуррентных транзакций текущего пользователя
      */
     @Transactional(readOnly = true)
@@ -84,7 +89,9 @@ public class RecurringTransactionService {
     }
 
     /**
-     * Возвращает список всех рекуррентных транзакций текущего пользователя, дата следующего списания которых меньше или равна указанной
+     * Возвращает список всех рекуррентных транзакций текущего пользователя, дата
+     * следующего списания которых меньше или равна указанной
+     * 
      * @param date дата, по которой получается список рекуррентных транзакций
      * @return список всех рекуррентных транзакций до укзанной даты включительно
      */
@@ -100,9 +107,11 @@ public class RecurringTransactionService {
 
     /**
      * Возвращает рекуррентную транзакцию по ее идентификатору
+     * 
      * @param transactionId идентификатор искомой транзакции
      * @return дто, содержащее данные искомой транзакции
-     * @throws NotFoundException если транзакции с указанным идентификатором не существует
+     * @throws NotFoundException если транзакции с указанным идентификатором не
+     *                           существует
      */
     public RecurringTransactionDto getTransactionById(UUID transactionId) {
 
@@ -116,10 +125,13 @@ public class RecurringTransactionService {
 
     /**
      * Изменяет рекуррентную транзакцию по ее идентфикатору
-     * @param transactionId идентификатор рекуррентной транзакции, подлежащей изменению
-     * @param request запрос, содеражащий данные для изменения
+     * 
+     * @param transactionId идентификатор рекуррентной транзакции, подлежащей
+     *                      изменению
+     * @param request       запрос, содеражащий данные для изменения
      * @return дто, содержащее данные измененной транзкациии
-     * @throws NotFoundException если транзакции с указанным идентификатором не существует
+     * @throws NotFoundException если транзакции с указанным идентификатором не
+     *                           существует
      */
     @Transactional
     public RecurringTransactionDto updateTransaction(UUID transactionId, RecurringTransactionRequest request) {
@@ -149,16 +161,21 @@ public class RecurringTransactionService {
                 throw new IllegalArgumentException("Next execution date cannot be before current date");
             transaction.setNextExecutionDate(request.nextExecutionDate());
         }
+
+        if (request.isActive() != null) {
+            transaction.setActive(request.isActive());
+        }
         logger.debug("updateRecurringTransaction() with id: {}", transactionId.toString());
-        transaction.setActive(request.isActive());
 
         return toDto(recurringTransactionRepository.save(transaction));
     }
 
     /**
      * Удаляет рекуррентную транзакцию по ее идентификатору
+     * 
      * @param transactionId идентификатор транзакции, подлежащей удалению
-     * @throws NotFoundException если транзакции с указанным идентификатором не существует
+     * @throws NotFoundException если транзакции с указанным идентификатором не
+     *                           существует
      */
     @Transactional
     public void deleteTransaction(UUID transactionId) {
@@ -170,9 +187,12 @@ public class RecurringTransactionService {
     }
 
     /**
-     * Возвращает список всех рекуррентных транзакций, у которых дата следующего списания меньше или равна указанной
+     * Возвращает список всех рекуррентных транзакций, у которых дата следующего
+     * списания меньше или равна указанной
+     * 
      * @param now дата, до которой ищутся транщакции
-     * @return список всех транзакций, у которых дата следующего списания меньше или равна указанной
+     * @return список всех транзакций, у которых дата следующего списания меньше или
+     *         равна указанной
      */
     @Transactional(readOnly = true)
     public List<RecurringTransaction> findAllActiveByNextExecutionDateBefore(LocalDate now) {
@@ -181,6 +201,7 @@ public class RecurringTransactionService {
 
     /**
      * Служебный метод, который сохраняет рекуррентную транзакцию
+     * 
      * @param transaction транзакция, которую нужно сохранить
      * @return сохраненную транзакцию
      */
@@ -191,6 +212,7 @@ public class RecurringTransactionService {
 
     /**
      * Служебный метод, который возвращает текущего пользователя
+     * 
      * @return текущий пользователь
      */
     private User getCurrentUser() {
@@ -199,6 +221,7 @@ public class RecurringTransactionService {
 
     /**
      * Служебный метод, который возвращает идентификатор текущего пользователя
+     * 
      * @return идетнификатор текущего пользователя
      */
     private Long getCurrentUserId() {
@@ -206,9 +229,11 @@ public class RecurringTransactionService {
     }
 
     /**
-     * Служебный метод, который возвращает категорию по ее идентификатору и идентификатору пользователя
+     * Служебный метод, который возвращает категорию по ее идентификатору и
+     * идентификатору пользователя
+     * 
      * @param categoryId идентификатор искомой категории
-     * @param userId идентификатор пользователя, которому принадлежит категория
+     * @param userId     идентификатор пользователя, которому принадлежит категория
      * @return категория с указанным идентификатором
      * @throws NotFoundException если категория с данными параметрами не существует
      */
@@ -218,7 +243,9 @@ public class RecurringTransactionService {
     }
 
     /**
-     * Служебный метод преобразующий рекуррентную тразакцию-сущность в рекуррентную транзакцию дто
+     * Служебный метод преобразующий рекуррентную тразакцию-сущность в рекуррентную
+     * транзакцию дто
+     * 
      * @param transaction сущность для преобразования
      * @return дто соответствующее данной сущности
      */
