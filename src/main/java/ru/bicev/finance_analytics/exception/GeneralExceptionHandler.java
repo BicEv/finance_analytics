@@ -10,6 +10,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.validation.ConstraintViolationException;
 import ru.bicev.finance_analytics.dto.ErrorResponse;
@@ -50,6 +51,12 @@ public class GeneralExceptionHandler {
                 .map(e -> new FieldErrorDto(e.getField(), e.getDefaultMessage()))
                 .toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ValidationErrorResponse(errors));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(400, ex.getMessage()));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
