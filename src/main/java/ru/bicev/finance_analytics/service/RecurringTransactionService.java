@@ -196,7 +196,7 @@ public class RecurringTransactionService {
      */
     @Transactional(readOnly = true)
     public List<RecurringTransaction> findAllActiveByNextExecutionDateBefore(LocalDate now) {
-        return recurringTransactionRepository.findAllByActiveAndNextExecutionDateLessThanEqual(true, now);
+        return recurringTransactionRepository.findAllByIsActiveAndNextExecutionDateLessThanEqual(true, now);
     }
 
     /**

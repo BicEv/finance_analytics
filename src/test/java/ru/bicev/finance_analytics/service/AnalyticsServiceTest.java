@@ -282,7 +282,7 @@ public class AnalyticsServiceTest {
 
         @Test
         void testGetUpcomingRecurringPayments() {
-                when(recurringTransactionRepository.findAllByUserIdAndActiveAndNextExecutionDateGreaterThan(userId,
+                when(recurringTransactionRepository.findAllByUserIdAndIsActiveAndNextExecutionDateGreaterThanEqual(userId,
                                 true,
                                 LocalDate.now())).thenReturn(List.of(rtr1, rtr2));
 

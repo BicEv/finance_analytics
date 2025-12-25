@@ -125,6 +125,7 @@ public class AnalyticsService {
                                 .entrySet()
                                 .stream()
                                 .map(e -> new DailyExpenseDto(e.getKey(), e.getValue().setScale(2)))
+                                .sorted((e1, e2) -> e1.date().compareTo(e2.date()))
                                 .toList();
         }
 
@@ -132,8 +133,9 @@ public class AnalyticsService {
          * Возвращает список расходов за указанный период по месяцам в формате "MM.yyyy"
          * 
          * @param range временной период, за который рассчитваются расходы
-         * @return спиоск трат сгруппированных по месяцам 
-         * @throws IllegalStateException если дата начала периода позднее даты окончания периода
+         * @return спиоск трат сгруппированных по месяцам
+         * @throws IllegalStateException если дата начала периода позднее даты окончания
+         *                               периода
          */
         public List<MonthlyExpenseDto> getMonthlyExpenses(DateRange range) {
                 if (range.start().isAfter(range.end())) {
@@ -155,6 +157,7 @@ public class AnalyticsService {
                                 .map(e -> new MonthlyExpenseDto(
                                                 e.getKey().format(DateTimeFormatter.ofPattern("MM.yyyy")),
                                                 e.getValue().setScale(2)))
+                                .sorted((e1, e2) -> e1.month().compareTo(e2.month()))
                                 .toList();
         }
 
@@ -162,7 +165,8 @@ public class AnalyticsService {
          * Возвращает поступления, траты и баланс за указанный месяц
          * 
          * @param month месяц, за который рассчитываются транзакции
-         * @return дто, в котором укзаны поступления, расходы и баланс за указанный месяц
+         * @return дто, в котором укзаны поступления, расходы и баланс за указанный
+         *         месяц
          */
         public SummaryDto getSummary(YearMonth month) {
                 List<Transaction> transactions = getTransactionsForMonth(month);
@@ -186,11 +190,14 @@ public class AnalyticsService {
         }
 
         /**
-         * Возвращает данные для указанного бюджета (имя категории, лимит для категории, сколько потрачено и использованный процент)
+         * Возвращает данные для указанного бюджета (имя категории, лимит для категории,
+         * сколько потрачено и использованный процент)
          * 
          * @param budgetId идентификатор бюджета, для которого будет произведен рассчет
-         * @return дто, в котором указаны имя категории, лимит на категорию, сколько потрачено и использованный процент
-         * @throws NotFoundException если передан идентификатор для не существующего бюджета
+         * @return дто, в котором указаны имя категории, лимит на категорию, сколько
+         *         потрачено и использованный процент
+         * @throws NotFoundException если передан идентификатор для не существующего
+         *                           бюджета
          */
         public CategoryBudgetStatusDto getCategoryBudgetStatus(UUID budgetId) {
                 Long userId = getCurrentUserId();
@@ -226,14 +233,16 @@ public class AnalyticsService {
         }
 
         /**
-         * Возвращает список пронозируемых трат на основе рекуррентных платежей в формате "MM.yyyy"
+         * Возвращает список пронозируемых трат на основе рекуррентных платежей в
+         * формате "MM.yyyy"
          * 
          * @return список пргнозируемых расходов за месяц
          */
         public List<RecurringForecastDto> getUpcomingRecurringPayments() {
                 Long userId = getCurrentUserId();
                 List<RecurringTransaction> transactions = recurringTransactionRepository
-                                .findAllByUserIdAndActiveAndNextExecutionDateGreaterThan(userId, true, LocalDate.now());
+                                .findAllByUserIdAndIsActiveAndNextExecutionDateGreaterThanEqual(userId, true,
+                                                LocalDate.now());
 
                 logger.debug("getUpcomintRecurringPayments() for user: {}", userId);
 
@@ -247,7 +256,9 @@ public class AnalyticsService {
                                                                                                 BigDecimal::add))))
                                 .entrySet()
                                 .stream()
-                                .map(e -> new RecurringForecastDto(e.getKey(), e.getValue().setScale(2))).toList();
+                                .map(e -> new RecurringForecastDto(e.getKey(), e.getValue().setScale(2)))
+                                .sorted((e1, e2) -> e1.month().compareTo(e2.month()))
+                                .toList();
         }
 
         /**
