@@ -217,9 +217,9 @@ public class AnalyticsServiceTest {
                 var result = analyticsService.getDailyExpenses(month);
 
                 assertNotNull(result);
-                assertEquals(tr2.getAmount(), result.get(0).amount());
-                assertEquals(tr4.getAmount(), result.get(1).amount());
-                assertEquals(tr1.getAmount(), result.get(2).amount());
+                assertEquals(tr1.getAmount(), result.get(0).amount());
+                assertEquals(tr2.getAmount(), result.get(1).amount());
+                assertEquals(tr4.getAmount(), result.get(2).amount());
         }
 
         @Test
