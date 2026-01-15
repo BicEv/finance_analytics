@@ -23,3 +23,9 @@ spring:
               - email
               - profile
 
+jwt:
+  secret: test-secret-test-secret-test-secret-test
+  expiration: 1h
+
+dotenv:
+  enabled: false
