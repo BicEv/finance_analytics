@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.validation.ConstraintViolationException;
 import ru.bicev.finance_analytics.dto.ErrorResponse;
@@ -65,6 +66,12 @@ public class GeneralExceptionHandler {
                 .stream()
                 .map(e -> new FieldErrorDto(e.getPropertyPath().toString(), e.getMessage())).toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ValidationErrorResponse(errors));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, "Page you are looking for is missing"));
     }
 
     @ExceptionHandler(Exception.class)
