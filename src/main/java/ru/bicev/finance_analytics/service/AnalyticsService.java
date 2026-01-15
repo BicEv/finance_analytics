@@ -162,7 +162,7 @@ public class AnalyticsService {
         }
 
         /**
-         * Возвращает поступления, траты и баланс за указанный месяц
+         * Возвращает поступления, суммы лититов бюджетов, траты и баланс за указанный месяц
          * 
          * @param month месяц, за который рассчитываются транзакции
          * @return дто, в котором укзаны поступления, расходы и баланс за указанный
@@ -171,7 +171,8 @@ public class AnalyticsService {
         public SummaryDto getSummary(YearMonth month) {
                 List<Transaction> transactions = getTransactionsForMonth(month);
 
-                BigDecimal income = ZERO;
+                BigDecimal income = budgetRepository.sumLimitAmountByUserIdAndMonth(getCurrentUserId(), month)
+                                .orElse(ZERO);
 
                 BigDecimal expense = ZERO;
 
