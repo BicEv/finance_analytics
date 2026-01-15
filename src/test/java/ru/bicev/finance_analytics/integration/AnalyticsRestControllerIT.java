@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ import ru.bicev.finance_analytics.security.CustomUserPrincipal;
 import ru.bicev.finance_analytics.util.CategoryType;
 import ru.bicev.finance_analytics.util.TestUtil;
 
+@ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -98,7 +100,7 @@ public class AnalyticsRestControllerIT {
                                                 .createdAt(NOW)
                                                 .email("test@email.com")
                                                 .lastLoginAt(NOW)
-                                                .avatarUrl("avater.png")
+                                                .avatarUrl("avatar.png")
                                                 .name("John Doe")
                                                 .provider("google")
                                                 .providerId("test-sub")
@@ -127,16 +129,16 @@ public class AnalyticsRestControllerIT {
                                 .save(TestUtil.generateTransaction(user, cat2, BigDecimal.valueOf(3900.00), 2025, 12,
                                                 19));
                 rtr1 = recurringTransactionRepository
-                                .save(TestUtil.generateRecurringTransaction(user, cat1, BigDecimal.valueOf(10.99), 2026,
+                                .save(TestUtil.generateRecurringTransaction(user, cat1, BigDecimal.valueOf(10.99), 2030,
                                                 1, 5));
                 rtr2 = recurringTransactionRepository
-                                .save(TestUtil.generateRecurringTransaction(user, cat1, BigDecimal.valueOf(15.99), 2026,
+                                .save(TestUtil.generateRecurringTransaction(user, cat1, BigDecimal.valueOf(15.99), 2030,
                                                 1, 9));
                 rtr3 = recurringTransactionRepository
-                                .save(TestUtil.generateRecurringTransaction(user, cat2, BigDecimal.valueOf(20.99), 2026,
+                                .save(TestUtil.generateRecurringTransaction(user, cat2, BigDecimal.valueOf(20.99), 2030,
                                                 1, 16));
                 rtr4 = recurringTransactionRepository
-                                .save(TestUtil.generateRecurringTransaction(user, cat2, BigDecimal.valueOf(25.99), 2026,
+                                .save(TestUtil.generateRecurringTransaction(user, cat2, BigDecimal.valueOf(25.99), 2030,
                                                 2, 15));
         }
 
@@ -251,14 +253,15 @@ public class AnalyticsRestControllerIT {
         // ---------------------
         @Test
         void getSummary_success() throws Exception {
+                BigDecimal income = budget1.getLimitAmount().add(budget2.getLimitAmount());
                 BigDecimal expense = tr3.getAmount().add(tr4.getAmount()).add(tr5.getAmount());
                 mockMvc.perform(get("/api/analytics/summary")
                                 .param("month", "2025-12")
                                 .with(oauth2Login().oauth2User(principal())))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.income").value(BigDecimal.ZERO))
+                                .andExpect(jsonPath("$.income").value(income))
                                 .andExpect(jsonPath("$.expense").value(expense))
-                                .andExpect(jsonPath("$.balance").value(BigDecimal.ZERO.subtract(expense)));
+                                .andExpect(jsonPath("$.balance").value(income.subtract(expense)));
         }
 
         @Test

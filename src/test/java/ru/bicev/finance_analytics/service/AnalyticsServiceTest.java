@@ -239,13 +239,17 @@ public class AnalyticsServiceTest {
         void testGetSummary() {
                 when(transactionRepository.findAllByUserIdAndDateBetween(userId, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr3, tr4));
+                when(budgetRepository.sumLimitAmountByUserIdAndMonth(userId, month))
+                                .thenReturn(Optional.of(b1.getLimitAmount()));
 
                 var result = analyticsService.getSummary(month);
+                BigDecimal income = b1.getLimitAmount().add(tr3.getAmount());
+                BigDecimal expense = tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount());
 
                 assertNotNull(result);
-                assertEquals(tr3.getAmount(), result.income());
-                assertEquals(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount()), result.expense());
-                assertEquals(tr3.getAmount().subtract(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount())),
+                assertEquals(income, result.income());
+                assertEquals(expense, result.expense());
+                assertEquals(income.subtract(expense),
                                 result.balance());
 
         }
@@ -282,7 +286,8 @@ public class AnalyticsServiceTest {
 
         @Test
         void testGetUpcomingRecurringPayments() {
-                when(recurringTransactionRepository.findAllByUserIdAndIsActiveAndNextExecutionDateGreaterThanEqual(userId,
+                when(recurringTransactionRepository.findAllByUserIdAndIsActiveAndNextExecutionDateGreaterThanEqual(
+                                userId,
                                 true,
                                 LocalDate.now())).thenReturn(List.of(rtr1, rtr2));
 

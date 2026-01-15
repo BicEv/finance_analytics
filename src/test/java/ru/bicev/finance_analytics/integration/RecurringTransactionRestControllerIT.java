@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ import ru.bicev.finance_analytics.security.CustomUserPrincipal;
 import ru.bicev.finance_analytics.util.CategoryType;
 import ru.bicev.finance_analytics.util.Frequency;
 
+@ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -61,7 +63,7 @@ public class RecurringTransactionRestControllerIT {
                                         "categoryId": "%s",
                                         "amount": 20.99,
                                         "frequency": "MONTHLY",
-                                        "nextExecutionDate": "2025-12-31",
+                                        "nextExecutionDate": "2030-12-31",
                                         "description": "Test transaction",
                                         "isActive": true
                                 }
@@ -158,7 +160,7 @@ public class RecurringTransactionRestControllerIT {
                                 .andExpect(jsonPath("$.id").exists())
                                 .andExpect(jsonPath("$.amount").value(20.99))
                                 .andExpect(jsonPath("$.description").value("Test transaction"))
-                                .andExpect(jsonPath("$.nextExecutionDate").value("2025-12-31"))
+                                .andExpect(jsonPath("$.nextExecutionDate").value("2030-12-31"))
                                 .andExpect(jsonPath("$.isActive").value(true));
         }
 
