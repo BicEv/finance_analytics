@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: "optional:file:.env[.properties]"
+
   application:
     name: finance-analytics
   jpa:
@@ -31,7 +34,7 @@ spring:
               - user:email
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600000}          
+  expiration: ${JWT_EXPIRATION:P7D}          
 
 app:
   security:
