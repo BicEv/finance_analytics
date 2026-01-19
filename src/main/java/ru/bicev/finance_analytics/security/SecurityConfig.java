@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 .oauth2Login(oauth -> oauth
                                                 .userInfoEndpoint(userInfo -> userInfo
                                                                 .userService(customOAuth2UserService))
-                                                .successHandler(successHandler))
+                                                .successHandler(successHandler)
+                                                .defaultSuccessUrl("http://localhost:5173", true))
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                                 .logout(logout -> logout
                                                 .logoutUrl("/logout")
