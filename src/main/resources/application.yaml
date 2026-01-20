@@ -40,4 +40,4 @@ app:
   security:
     secure-cookie: false
   frontend:
-    redirect-url: ${REDIRECT_URL}
+    redirect-url: ${FRONTEND_URL}
