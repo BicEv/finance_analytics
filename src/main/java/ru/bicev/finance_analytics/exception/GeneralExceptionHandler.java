@@ -43,6 +43,11 @@ public class GeneralExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(400, ex.getMessage()));
     }
 
+    @ExceptionHandler(DuplicateException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateException(DuplicateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(409, ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex) {

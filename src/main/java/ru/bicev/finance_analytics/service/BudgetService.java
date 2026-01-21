@@ -19,6 +19,7 @@ import ru.bicev.finance_analytics.dto.BudgetUpdateRequest;
 import ru.bicev.finance_analytics.entity.Budget;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.User;
+import ru.bicev.finance_analytics.exception.DuplicateException;
 import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.BudgetRepository;
 import ru.bicev.finance_analytics.repo.CategoryRepository;
@@ -56,7 +57,10 @@ public class BudgetService {
         User user = getCurrentUser();
         Category category = categoryRepository.findByIdAndUserId(request.categoryId(), user.getId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-        //To-Do no duble budgets for one month and category
+        if (budgetRepository.findByUserIdAndCategoryIdAndMonth(user.getId(), request.categoryId(), request.month())
+                .isPresent()) {
+            throw new DuplicateException("Budget for this month and category already exists");
+        }
         logger.debug("createBudget() for user: {}", user.getId());
         Budget budget = Budget.builder()
                 .user(user)
@@ -137,14 +141,13 @@ public class BudgetService {
             budget.setMonth(request.month());
         }
 
-
         if (request.amount() != null) {
             if (request.amount().compareTo(BigDecimal.ZERO) != 1) {
                 throw new IllegalArgumentException("Limit amount cannot be zero or less");
             }
             budget.setAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
         }
-        
+
         return toDto(budgetRepository.save(budget));
     }
 
