@@ -17,8 +17,8 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
     List<Budget> findByUserIdAndMonth(Long userId, YearMonth month);
 
-    @Query("SELECT SUM(b.limitAmount) from Budget b where b.user.id = :userId and b.month = :month")
-    Optional<BigDecimal> sumLimitAmountByUserIdAndMonth(Long userId, YearMonth month);
+    @Query("SELECT SUM(b.amount) from Budget b where b.user.id = :userId and b.month = :month")
+    Optional<BigDecimal> sumAmountByUserIdAndMonth(Long userId, YearMonth month);
 
     Optional<Budget> findByIdAndUserId(UUID id, Long userId);
 

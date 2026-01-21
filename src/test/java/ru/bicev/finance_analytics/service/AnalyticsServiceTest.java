@@ -239,7 +239,7 @@ public class AnalyticsServiceTest {
         void testGetSummary() {
                 when(transactionRepository.findAllByUserIdAndDateBetween(userId, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr3, tr4));
-                when(budgetRepository.sumLimitAmountByUserIdAndMonth(userId, month))
+                when(budgetRepository.sumAmountByUserIdAndMonth(userId, month))
                                 .thenReturn(Optional.of(b1.getAmount()));
 
                 var result = analyticsService.getSummary(month);

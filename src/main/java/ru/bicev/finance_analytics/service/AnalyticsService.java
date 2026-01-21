@@ -171,7 +171,7 @@ public class AnalyticsService {
         public SummaryDto getSummary(YearMonth month) {
                 List<Transaction> transactions = getTransactionsForMonth(month);
 
-                BigDecimal income = budgetRepository.sumLimitAmountByUserIdAndMonth(getCurrentUserId(), month)
+                BigDecimal income = budgetRepository.sumAmountByUserIdAndMonth(getCurrentUserId(), month)
                                 .orElse(ZERO);
 
                 BigDecimal expense = ZERO;
