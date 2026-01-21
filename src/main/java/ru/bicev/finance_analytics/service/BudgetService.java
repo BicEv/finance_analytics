@@ -133,8 +133,10 @@ public class BudgetService {
         logger.debug("updateBudget() with id: {}", budgetId.toString());
 
         if (request.categoryId() != null && request.month() != null) {
-            if (budgetRepository.findByUserIdAndCategoryIdAndMonth(user.getId(), request.categoryId(), request.month())
-                    .isPresent()) {
+            Budget existing = budgetRepository
+                    .findByUserIdAndCategoryIdAndMonth(user.getId(), request.categoryId(), request.month())
+                    .orElse(null);
+            if (existing != null && !existing.getId().equals(budget.getId())) {
                 throw new DuplicateException("Budget for this category and month already exists");
             }
         }
