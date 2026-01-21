@@ -127,9 +127,17 @@ public class BudgetService {
      */
     @Transactional
     public BudgetDto updateBudget(UUID budgetId, BudgetUpdateRequest request) {
-        Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
+        User user = getCurrentUser();
+        Budget budget = budgetRepository.findByIdAndUserId(budgetId, user.getId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
         logger.debug("updateBudget() with id: {}", budgetId.toString());
+
+        if (request.categoryId() != null && request.month() != null) {
+            if (budgetRepository.findByUserIdAndCategoryIdAndMonth(user.getId(), request.categoryId(), request.month())
+                    .isPresent()) {
+                throw new DuplicateException("Budget for this category and month already exists");
+            }
+        }
 
         if (request.categoryId() != null) {
             Category category = categoryRepository.findByIdAndUserId(request.categoryId(), getCurrentUser().getId())
