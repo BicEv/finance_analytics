@@ -219,16 +219,16 @@ public class AnalyticsService {
                                 .setScale(2, RoundingMode.HALF_UP);
 
                 BigDecimal percentUsed = ZERO;
-                if (budget.getLimitAmount() != null && budget.getLimitAmount().compareTo(ZERO) > 0) {
+                if (budget.getAmount() != null && budget.getAmount().compareTo(ZERO) > 0) {
                         percentUsed = spent
-                                        .divide(budget.getLimitAmount(), 2, RoundingMode.HALF_UP)
+                                        .divide(budget.getAmount(), 2, RoundingMode.HALF_UP)
                                         .multiply(BigDecimal.valueOf(100))
                                         .setScale(2, RoundingMode.HALF_UP);
                 }
 
                 return new CategoryBudgetStatusDto(
                                 budget.getCategory().getName(),
-                                budget.getLimitAmount(),
+                                budget.getAmount(),
                                 spent,
                                 percentUsed);
         }

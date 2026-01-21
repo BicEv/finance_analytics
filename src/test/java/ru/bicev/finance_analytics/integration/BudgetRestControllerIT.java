@@ -111,14 +111,14 @@ public class BudgetRestControllerIT {
                 budget1 = budgetRepo.save(Budget.builder()
                                 .category(category1)
                                 .createdAt(LocalDateTime.now())
-                                .limitAmount(BigDecimal.valueOf(10000.00))
+                                .amount(BigDecimal.valueOf(10000.00))
                                 .user(user)
                                 .month(YearMonth.of(2025, 6))
                                 .build());
                 budget2 = budgetRepo.save(Budget.builder()
                                 .category(category2)
                                 .createdAt(LocalDateTime.now())
-                                .limitAmount(BigDecimal.valueOf(10000.00))
+                                .amount(BigDecimal.valueOf(10000.00))
                                 .user(user)
                                 .month(YearMonth.of(2025, 7))
                                 .build());
@@ -172,7 +172,7 @@ public class BudgetRestControllerIT {
                                 .with(oauth2Login().oauth2User(principal())))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(budget1.getId().toString()))
-                                .andExpect(jsonPath("$.limitAmount").value(budget1.getLimitAmount()))
+                                .andExpect(jsonPath("$.limitAmount").value(budget1.getAmount()))
                                 .andExpect(jsonPath("$.month").value(budget1.getMonth().toString()));
         }
 
@@ -195,8 +195,8 @@ public class BudgetRestControllerIT {
                                 .andExpect(jsonPath("$.length()").value(2))
                                 .andExpect(jsonPath("$[0].id").value(budget1.getId().toString()))
                                 .andExpect(jsonPath("$[1].id").value(budget2.getId().toString()))
-                                .andExpect(jsonPath("$[0].limitAmount").value(budget1.getLimitAmount()))
-                                .andExpect(jsonPath("$[1].limitAmount").value(budget2.getLimitAmount()))
+                                .andExpect(jsonPath("$[0].limitAmount").value(budget1.getAmount()))
+                                .andExpect(jsonPath("$[1].limitAmount").value(budget2.getAmount()))
                                 .andExpect(jsonPath("$[0].month").value(budget1.getMonth().toString()))
                                 .andExpect(jsonPath("$[1].month").value(budget2.getMonth().toString()));
         }
@@ -209,7 +209,7 @@ public class BudgetRestControllerIT {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(1))
                                 .andExpect(jsonPath("$[0].id").value(budget2.getId().toString()))
-                                .andExpect(jsonPath("$[0].limitAmount").value(budget2.getLimitAmount()))
+                                .andExpect(jsonPath("$[0].limitAmount").value(budget2.getAmount()))
                                 .andExpect(jsonPath("$[0].month").value(budget2.getMonth().toString()));
         }
 

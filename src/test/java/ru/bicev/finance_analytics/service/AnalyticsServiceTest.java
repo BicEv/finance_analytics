@@ -172,7 +172,7 @@ public class AnalyticsServiceTest {
                 b1 = Budget.builder()
                                 .category(catExpense1)
                                 .id(budgetId)
-                                .limitAmount(BigDecimal.valueOf(250).setScale(2, RoundingMode.HALF_UP))
+                                .amount(BigDecimal.valueOf(250).setScale(2, RoundingMode.HALF_UP))
                                 .user(user)
                                 .month(month)
                                 .build();
@@ -240,10 +240,10 @@ public class AnalyticsServiceTest {
                 when(transactionRepository.findAllByUserIdAndDateBetween(userId, month.atDay(1),
                                 month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr3, tr4));
                 when(budgetRepository.sumLimitAmountByUserIdAndMonth(userId, month))
-                                .thenReturn(Optional.of(b1.getLimitAmount()));
+                                .thenReturn(Optional.of(b1.getAmount()));
 
                 var result = analyticsService.getSummary(month);
-                BigDecimal income = b1.getLimitAmount().add(tr3.getAmount());
+                BigDecimal income = b1.getAmount().add(tr3.getAmount());
                 BigDecimal expense = tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount());
 
                 assertNotNull(result);
@@ -265,11 +265,11 @@ public class AnalyticsServiceTest {
 
                 assertNotNull(result);
                 assertEquals(b1.getCategory().getName(), result.category());
-                assertEquals(b1.getLimitAmount(), result.limit());
+                assertEquals(b1.getAmount(), result.limit());
                 assertEquals(tr1.getAmount().add(tr2.getAmount()), result.spent());
                 assertEquals(
                                 tr1.getAmount().add(tr2.getAmount())
-                                                .multiply(BigDecimal.valueOf(100).divide(b1.getLimitAmount()))
+                                                .multiply(BigDecimal.valueOf(100).divide(b1.getAmount()))
                                                 .setScale(2, RoundingMode.HALF_UP),
                                 result.percentUsed());
 

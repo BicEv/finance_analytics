@@ -100,7 +100,7 @@ public class TestUtil {
         return Budget.builder()
                 .user(user)
                 .category(category)
-                .limitAmount(amount)
+                .amount(amount)
                 .createdAt(NOW)
                 .month(month)
                 .build();

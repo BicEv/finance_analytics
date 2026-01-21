@@ -36,7 +36,7 @@ public class Budget {
 
     private YearMonth month;
 
-    private BigDecimal limitAmount;
+    private BigDecimal amount;
 
     private LocalDateTime createdAt;
 

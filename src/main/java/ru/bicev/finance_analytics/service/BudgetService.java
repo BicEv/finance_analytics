@@ -56,13 +56,13 @@ public class BudgetService {
         User user = getCurrentUser();
         Category category = categoryRepository.findByIdAndUserId(request.categoryId(), user.getId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-
+        //To-Do no duble budgets for one month and category
         logger.debug("createBudget() for user: {}", user.getId());
         Budget budget = Budget.builder()
                 .user(user)
                 .category(category)
                 .month(request.month())
-                .limitAmount(request.amount().setScale(2, RoundingMode.HALF_UP))
+                .amount(request.amount().setScale(2, RoundingMode.HALF_UP))
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -138,11 +138,11 @@ public class BudgetService {
         }
 
 
-        if (request.limitAmount() != null) {
-            if (request.limitAmount().compareTo(BigDecimal.ZERO) != 1) {
+        if (request.amount() != null) {
+            if (request.amount().compareTo(BigDecimal.ZERO) != 1) {
                 throw new IllegalArgumentException("Limit amount cannot be zero or less");
             }
-            budget.setLimitAmount(request.limitAmount().setScale(2, RoundingMode.HALF_UP));
+            budget.setAmount(request.amount().setScale(2, RoundingMode.HALF_UP));
         }
         
         return toDto(budgetRepository.save(budget));
@@ -180,7 +180,7 @@ public class BudgetService {
         Budget budget = Budget.builder()
                 .user(user)
                 .category(category)
-                .limitAmount(amount)
+                .amount(amount)
                 .month(month)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -209,7 +209,7 @@ public class BudgetService {
                 budget.getCategory().getId(),
                 budget.getCategory().getName(),
                 budget.getMonth(),
-                budget.getLimitAmount());
+                budget.getAmount());
     }
 
 }

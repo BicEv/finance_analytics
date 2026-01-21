@@ -89,7 +89,7 @@ public class BudgetServiceTest {
 
                 assertEquals(category, saved.getCategory());
                 assertEquals(month, saved.getMonth());
-                assertEquals(amount, saved.getLimitAmount());
+                assertEquals(amount, saved.getAmount());
                 assertEquals(user, saved.getUser());
                 assertNotNull(saved.getCreatedAt());
         }
@@ -118,7 +118,7 @@ public class BudgetServiceTest {
                 Budget budget = Budget.builder()
                                 .id(id)
                                 .user(user)
-                                .limitAmount(amount)
+                                .amount(amount)
                                 .category(category)
                                 .build();
 
@@ -128,7 +128,7 @@ public class BudgetServiceTest {
                 BudgetDto result = budgetService.getBudgetById(id);
 
                 assertEquals(id, result.id());
-                assertEquals(amount, result.limitAmount());
+                assertEquals(amount, result.amount());
         }
 
         @Test
@@ -148,9 +148,9 @@ public class BudgetServiceTest {
         @Test
         void testGetAllBudgetsForUser_success() {
                 amount = BigDecimal.valueOf(150).setScale(2, RoundingMode.HALF_UP);
-                Budget b1 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).limitAmount(amount)
+                Budget b1 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).amount(amount)
                                 .build();
-                Budget b2 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).limitAmount(amount)
+                Budget b2 = Budget.builder().id(UUID.randomUUID()).user(user).category(category).amount(amount)
                                 .build();
 
                 when(budgetRepository.findAllByUserId(user.getId()))
@@ -196,7 +196,7 @@ public class BudgetServiceTest {
                                 .user(user)
                                 .month(YearMonth.of(2024, 10))
                                 .category(category)
-                                .limitAmount(BigDecimal.valueOf(200.0))
+                                .amount(BigDecimal.valueOf(200.0))
                                 .build();
 
                 BudgetUpdateRequest request = new BudgetUpdateRequest(
@@ -213,7 +213,7 @@ public class BudgetServiceTest {
                 BudgetDto result = budgetService.updateBudget(id, request);
 
                 assertEquals(newMonth, result.month());
-                assertEquals(amount, result.limitAmount());
+                assertEquals(amount, result.amount());
 
                 verify(budgetRepository).save(existing);
         }

@@ -253,7 +253,7 @@ public class AnalyticsRestControllerIT {
         // ---------------------
         @Test
         void getSummary_success() throws Exception {
-                BigDecimal income = budget1.getLimitAmount().add(budget2.getLimitAmount());
+                BigDecimal income = budget1.getAmount().add(budget2.getAmount());
                 BigDecimal expense = tr3.getAmount().add(tr4.getAmount()).add(tr5.getAmount());
                 mockMvc.perform(get("/api/analytics/summary")
                                 .param("month", "2025-12")
@@ -279,14 +279,14 @@ public class AnalyticsRestControllerIT {
         @Test
         void getCategoryBudgetStatus_success() throws Exception {
                 BigDecimal percentUsed = tr3.getAmount()
-                                .divide(budget1.getLimitAmount(), 2, RoundingMode.HALF_UP)
+                                .divide(budget1.getAmount(), 2, RoundingMode.HALF_UP)
                                 .multiply(BigDecimal.valueOf(100))
                                 .setScale(2, RoundingMode.HALF_UP);
                 mockMvc.perform(get("/api/analytics/budget/" + budget1.getId().toString())
                                 .with(oauth2Login().oauth2User(principal())))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.category").value(budget1.getCategory().getName()))
-                                .andExpect(jsonPath("$.limit").value(budget1.getLimitAmount()))
+                                .andExpect(jsonPath("$.limit").value(budget1.getAmount()))
                                 .andExpect(jsonPath("$.spent").value(tr3.getAmount()))
                                 .andExpect(jsonPath("$.percentUsed").value(percentUsed.doubleValue()));
         }
