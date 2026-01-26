@@ -181,6 +181,8 @@ public class BudgetTemplateService {
     private BudgetTemplateDto toDto(BudgetTemplate budgetTemplate) {
         return new BudgetTemplateDto(
                 budgetTemplate.getId(),
+                budgetTemplate.getCategory().getId(),
+                budgetTemplate.getCategory().getName(),
                 budgetTemplate.getAmount(),
                 budgetTemplate.isActive(),
                 budgetTemplate.getStartMonth().format(FORMAT));
