@@ -1,6 +1,5 @@
 package ru.bicev.finance_analytics.integration;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,12 +13,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +42,7 @@ import ru.bicev.finance_analytics.util.TestUtil;
 
 @ActiveProfiles("test")
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class AnalyticsRestControllerIT {
 
@@ -63,6 +65,7 @@ public class AnalyticsRestControllerIT {
         RecurringTransactionRepository recurringTransactionRepository;
 
         private User user;
+        private CustomUserPrincipal principal;
         private Category cat1;
         private Category cat2;
         private Budget budget1;
@@ -105,6 +108,10 @@ public class AnalyticsRestControllerIT {
                                                 .provider("google")
                                                 .providerId("test-sub")
                                                 .build());
+                principal = new CustomUserPrincipal(user.getId(), Map.of());
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null,
+                                principal.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
                 cat1 = categoryRepository.save(TestUtil.generateCategory(user, CategoryType.EXPENSE, "Category 1"));
                 cat2 = categoryRepository.save(TestUtil.generateCategory(user, CategoryType.EXPENSE, "Category 2"));
                 budget1 = budgetRepository
@@ -142,14 +149,18 @@ public class AnalyticsRestControllerIT {
                                                 2, 15));
         }
 
+        @AfterEach
+        void cleanUp() {
+                SecurityContextHolder.clearContext();
+        }
+
         // ---------------------
         // getExpensesByCategory()
         // ---------------------
         @Test
         void getExpensesByCategory_success() throws Exception {
                 mockMvc.perform(get("/api/analytics/categories")
-                                .param("month", "2025-12")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("month", "2025-12"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(2))
                                 .andExpect(jsonPath("$[0].category").value(cat2.getName()))
@@ -161,8 +172,7 @@ public class AnalyticsRestControllerIT {
         @Test
         void getExpensesByCategory_invalidParam() throws Exception {
                 mockMvc.perform(get("/api/analytics/categories")
-                                .param("month", "ab--15")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("month", "ab--15"))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400));
         }
@@ -174,8 +184,7 @@ public class AnalyticsRestControllerIT {
         void getTopCategories_success() throws Exception {
                 mockMvc.perform(get("/api/analytics/categories/top")
                                 .param("month", "2025-12")
-                                .param("limit", "1")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("limit", "1"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(1))
                                 .andExpect(jsonPath("$[0].category").value(cat2.getName()))
@@ -186,8 +195,7 @@ public class AnalyticsRestControllerIT {
         void getTopCategories_withInvalidParam() throws Exception {
                 mockMvc.perform(get("/api/analytics/categories/top")
                                 .param("month", "2025-12")
-                                .param("limit", "-700")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("limit", "-700"))
                                 .andExpect(status().isBadRequest());
         }
 
@@ -197,8 +205,7 @@ public class AnalyticsRestControllerIT {
         @Test
         void getDailyExpenses_success() throws Exception {
                 mockMvc.perform(get("/api/analytics/daily")
-                                .param("month", "2025-12")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("month", "2025-12"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(3))
                                 .andExpect(jsonPath("$[0].date").value(tr3.getDate().toString()))
@@ -212,8 +219,7 @@ public class AnalyticsRestControllerIT {
         @Test
         void getDailyExpenses_withInvalidParam() throws Exception {
                 mockMvc.perform(get("/api/analytics/daily")
-                                .param("month", "17-1452")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("month", "17-1452"))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400));
         }
@@ -226,8 +232,7 @@ public class AnalyticsRestControllerIT {
                 BigDecimal decemberTotal = tr3.getAmount().add(tr4.getAmount()).add(tr5.getAmount());
                 mockMvc.perform(post("/api/analytics/monthly")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(dateRange)
-                                .with(oauth2Login().oauth2User(principal())))
+                                .content(dateRange))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(3))
                                 .andExpect(jsonPath("$[0].month").value(tr1.getDate().format(FORMAT)))
@@ -242,8 +247,7 @@ public class AnalyticsRestControllerIT {
         void getMonthlyExpenses_withInvalidRequest() throws Exception {
                 mockMvc.perform(post("/api/analytics/monthly")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(invalidDateRange)
-                                .with(oauth2Login().oauth2User(principal())))
+                                .content(invalidDateRange))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400));
         }
@@ -256,8 +260,7 @@ public class AnalyticsRestControllerIT {
                 BigDecimal income = budget1.getAmount().add(budget2.getAmount());
                 BigDecimal expense = tr3.getAmount().add(tr4.getAmount()).add(tr5.getAmount());
                 mockMvc.perform(get("/api/analytics/summary")
-                                .param("month", "2025-12")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("month", "2025-12"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.income").value(income))
                                 .andExpect(jsonPath("$.expense").value(expense))
@@ -267,8 +270,7 @@ public class AnalyticsRestControllerIT {
         @Test
         void getSummary_withInvalidParam() throws Exception {
                 mockMvc.perform(get("/api/analytics/summary")
-                                .param("month", "-5-10000")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("month", "-5-10000"))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400));
         }
@@ -282,8 +284,7 @@ public class AnalyticsRestControllerIT {
                                 .divide(budget1.getAmount(), 2, RoundingMode.HALF_UP)
                                 .multiply(BigDecimal.valueOf(100))
                                 .setScale(2, RoundingMode.HALF_UP);
-                mockMvc.perform(get("/api/analytics/budget/" + budget1.getId().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/analytics/budget/" + budget1.getId().toString()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.category").value(budget1.getCategory().getName()))
                                 .andExpect(jsonPath("$.limit").value(budget1.getAmount()))
@@ -293,8 +294,7 @@ public class AnalyticsRestControllerIT {
 
         @Test
         void getCategoryBudgetStatus_budgetNotFound() throws Exception {
-                mockMvc.perform(get("/api/analytics/budget/" + UUID.randomUUID().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/analytics/budget/" + UUID.randomUUID().toString()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.code").value(404));
         }
@@ -305,8 +305,7 @@ public class AnalyticsRestControllerIT {
         @Test
         void getUpcomingRecurringPayments_success() throws Exception {
                 BigDecimal expected = rtr1.getAmount().add(rtr2.getAmount()).add(rtr3.getAmount());
-                mockMvc.perform(get("/api/analytics/upcoming")
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/analytics/upcoming"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(2))
                                 .andExpect(jsonPath("$[0].month").value(rtr1.getNextExecutionDate().format(FORMAT)))
@@ -314,12 +313,6 @@ public class AnalyticsRestControllerIT {
                                 .andExpect(jsonPath("$[1].month").value(rtr4.getNextExecutionDate().format(FORMAT)))
                                 .andExpect(jsonPath("$[1].expectedAmount").value(rtr4.getAmount()));
 
-        }
-
-        private CustomUserPrincipal principal() {
-                return new CustomUserPrincipal(user, Map.of(
-                                "sub", "test-sub",
-                                "email", "test@email.com"));
         }
 
 }

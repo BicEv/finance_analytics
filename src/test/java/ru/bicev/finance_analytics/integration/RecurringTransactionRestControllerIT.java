@@ -1,6 +1,5 @@
 package ru.bicev.finance_analytics.integration;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -14,12 +13,15 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +38,7 @@ import ru.bicev.finance_analytics.util.Frequency;
 
 @ActiveProfiles("test")
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class RecurringTransactionRestControllerIT {
 
@@ -53,6 +55,7 @@ public class RecurringTransactionRestControllerIT {
         RecurringTransactionRepository recurringTransactionRepository;
 
         private User user;
+        private CustomUserPrincipal principal;
         private Category category1;
         private RecurringTransaction tr1;
         private RecurringTransaction tr2;
@@ -99,6 +102,10 @@ public class RecurringTransactionRestControllerIT {
                                                 .createdAt(LocalDateTime.now())
                                                 .lastLoginAt(LocalDateTime.now())
                                                 .build());
+                principal = new CustomUserPrincipal(user.getId(), Map.of());
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null,
+                                principal.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
                 category1 = categoryRepository.save(
                                 Category.builder()
                                                 .name("Food")
@@ -146,6 +153,11 @@ public class RecurringTransactionRestControllerIT {
 
         }
 
+        @AfterEach
+        void cleanUp() {
+                SecurityContextHolder.clearContext();
+        }
+
         // ---------------------
         // createTransaction()
         // ---------------------
@@ -153,7 +165,6 @@ public class RecurringTransactionRestControllerIT {
         void createTransaction_success() throws Exception {
                 mockMvc.perform(
                                 post("/api/recurring")
-                                                .with(oauth2Login().oauth2User(principal()))
                                                 .contentType(MediaType.APPLICATION_JSON)
                                                 .content(request.formatted(category1.getId().toString())))
                                 .andExpect(status().isCreated())
@@ -168,7 +179,6 @@ public class RecurringTransactionRestControllerIT {
         void createTransaction_invalidRequest() throws Exception {
                 mockMvc.perform(
                                 post("/api/recurring")
-                                                .with(oauth2Login().oauth2User(principal()))
                                                 .contentType(MediaType.APPLICATION_JSON)
                                                 .content(invalidRequest.formatted(category1.getId().toString())))
                                 .andExpect(status().isBadRequest())
@@ -179,7 +189,6 @@ public class RecurringTransactionRestControllerIT {
         void createTransaction_categoryNotFound() throws Exception {
                 mockMvc.perform(
                                 post("/api/recurring")
-                                                .with(oauth2Login().oauth2User(principal()))
                                                 .contentType(MediaType.APPLICATION_JSON)
                                                 .content(request.formatted(UUID.randomUUID().toString())))
                                 .andExpect(status().isNotFound())
@@ -191,8 +200,7 @@ public class RecurringTransactionRestControllerIT {
         // ---------------------
         @Test
         void getTransactions_success() throws Exception {
-                mockMvc.perform(get("/api/recurring")
-                                .with(oauth2Login().oauth2User(principal()))).andExpect(status().isOk())
+                mockMvc.perform(get("/api/recurring"))
                                 .andExpect(jsonPath("$.length()").value(3))
                                 .andExpect(jsonPath("$[0].amount").value(tr1.getAmount()))
                                 .andExpect(jsonPath("$[0].nextExecutionDate")
@@ -211,8 +219,7 @@ public class RecurringTransactionRestControllerIT {
         @Test
         void getTransactions_withParam() throws Exception {
                 mockMvc.perform(get("/api/recurring")
-                                .param("date", "2026-01-01")
-                                .with(oauth2Login().oauth2User(principal()))).andExpect(status().isOk())
+                                .param("date", "2026-01-01"))
                                 .andExpect(jsonPath("$.length()").value(2))
                                 .andExpect(jsonPath("$[0].amount").value(tr1.getAmount()))
                                 .andExpect(jsonPath("$[0].nextExecutionDate")
@@ -227,8 +234,7 @@ public class RecurringTransactionRestControllerIT {
         @Test
         void getTransactions_withInvalidParam() throws Exception {
                 mockMvc.perform(get("/api/recurring")
-                                .param("date", "abc")
-                                .with(oauth2Login().oauth2User(principal())))
+                                .param("date", "abc"))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400));
         }
@@ -238,8 +244,7 @@ public class RecurringTransactionRestControllerIT {
         // ---------------------
         @Test
         void getTransactionById_success() throws Exception {
-                mockMvc.perform(get("/api/recurring/" + tr2.getId().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/recurring/" + tr2.getId().toString()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(tr2.getId().toString()))
                                 .andExpect(jsonPath("$.amount").value(tr2.getAmount()))
@@ -250,8 +255,7 @@ public class RecurringTransactionRestControllerIT {
 
         @Test
         void getTransactionById_notFound() throws Exception {
-                mockMvc.perform(get("/api/recurring/" + UUID.randomUUID().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/recurring/" + UUID.randomUUID().toString()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.code").value(404));
         }
@@ -263,7 +267,6 @@ public class RecurringTransactionRestControllerIT {
         void updateTransaction_success() throws Exception {
                 mockMvc.perform(
                                 put("/api/recurring/" + tr3.getId().toString())
-                                                .with(oauth2Login().oauth2User(principal()))
                                                 .contentType(MediaType.APPLICATION_JSON)
                                                 .content(updateRequest))
                                 .andExpect(status().isOk())
@@ -277,7 +280,6 @@ public class RecurringTransactionRestControllerIT {
         void updateTransaction_notFound() throws Exception {
                 mockMvc.perform(
                                 put("/api/recurring/" + UUID.randomUUID().toString())
-                                                .with(oauth2Login().oauth2User(principal()))
                                                 .contentType(MediaType.APPLICATION_JSON)
                                                 .content(updateRequest))
                                 .andExpect(status().isNotFound())
@@ -289,23 +291,15 @@ public class RecurringTransactionRestControllerIT {
         // ---------------------
         @Test
         void deleteTransaction_success() throws Exception {
-                mockMvc.perform(delete("/api/recurring/" + tr2.getId().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(delete("/api/recurring/" + tr2.getId().toString()))
                                 .andExpect(status().isNoContent());
         }
 
         @Test
         void deleteTransaction_notFound() throws Exception {
-                mockMvc.perform(delete("/api/recurring/" + UUID.randomUUID().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(delete("/api/recurring/" + UUID.randomUUID().toString()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.code").value(404));
-        }
-
-        private CustomUserPrincipal principal() {
-                return new CustomUserPrincipal(user, Map.of(
-                                "sub", "test-sub",
-                                "email", "test@email.com"));
         }
 
 }

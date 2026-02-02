@@ -1,6 +1,5 @@
 package ru.bicev.finance_analytics.integration;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -14,12 +13,15 @@ import java.time.YearMonth;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +37,7 @@ import ru.bicev.finance_analytics.util.CategoryType;
 
 @ActiveProfiles("test")
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class BudgetRestControllerIT {
 
@@ -52,6 +54,7 @@ public class BudgetRestControllerIT {
         BudgetRepository budgetRepo;
 
         private User user;
+        private CustomUserPrincipal principal;
         private Category category1;
         private Category category2;
         private Budget budget1;
@@ -75,8 +78,8 @@ public class BudgetRestControllerIT {
         private String updateRequest = """
                         {
                             "categoryId": "%s",
-                            "month": "2025-12",
-                            "limitAmount": "777.00"
+                            "month": "2026-02",
+                            "amount": "777.00"
                         }
                         """;
 
@@ -92,6 +95,10 @@ public class BudgetRestControllerIT {
                                                 .createdAt(LocalDateTime.now())
                                                 .lastLoginAt(LocalDateTime.now())
                                                 .build());
+                principal = new CustomUserPrincipal(user.getId(), Map.of());
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null,
+                                principal.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
                 category1 = categoryRepo.save(
                                 Category.builder()
                                                 .name("Test")
@@ -124,7 +131,10 @@ public class BudgetRestControllerIT {
                                 .build());
         }
 
-        
+        @AfterEach
+        void cleanUp() {
+                SecurityContextHolder.clearContext();
+        }
 
         // ---------------------
         // createBudget()
@@ -132,21 +142,19 @@ public class BudgetRestControllerIT {
         @Test
         void createBudget_success() throws Exception {
                 mockMvc.perform(post("/api/budgets")
-                                .with(oauth2Login().oauth2User(principal()))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request.formatted(category1.getId().toString())))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.id").exists())
                                 .andExpect(jsonPath("$.categoryId").value(category1.getId().toString()))
                                 .andExpect(jsonPath("$.categoryName").value(category1.getName()))
-                                .andExpect(jsonPath("$.limitAmount").value(11300.00))
+                                .andExpect(jsonPath("$.amount").value(11300.00))
                                 .andExpect(jsonPath("$.month").value("2025-04"));
         }
 
         @Test
         void createBudget_categoryNotFound() throws Exception {
                 mockMvc.perform(post("/api/budgets")
-                                .with(oauth2Login().oauth2User(principal()))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request.formatted(UUID.randomUUID().toString())))
                                 .andExpect(status().isNotFound())
@@ -156,7 +164,6 @@ public class BudgetRestControllerIT {
         @Test
         void createBudget_invalidRequest() throws Exception {
                 mockMvc.perform(post("/api/budgets")
-                                .with(oauth2Login().oauth2User(principal()))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(invalidRequest.formatted(category1.getId().toString())))
                                 .andExpect(status().isBadRequest())
@@ -168,18 +175,16 @@ public class BudgetRestControllerIT {
         // ---------------------
         @Test
         void getBudgetById_success() throws Exception {
-                mockMvc.perform(get("/api/budgets/" + budget1.getId().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/budgets/" + budget1.getId().toString()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(budget1.getId().toString()))
-                                .andExpect(jsonPath("$.limitAmount").value(budget1.getAmount()))
+                                .andExpect(jsonPath("$.amount").value(budget1.getAmount()))
                                 .andExpect(jsonPath("$.month").value(budget1.getMonth().toString()));
         }
 
         @Test
         void getBudgetById_notFound() throws Exception {
-                mockMvc.perform(get("/api/budgets/" + UUID.randomUUID().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/budgets/" + UUID.randomUUID().toString()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.code").value(404));
         }
@@ -189,14 +194,13 @@ public class BudgetRestControllerIT {
         // ---------------------
         @Test
         void getAllUsersBudgets_success() throws Exception {
-                mockMvc.perform(get("/api/budgets")
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(get("/api/budgets"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(2))
                                 .andExpect(jsonPath("$[0].id").value(budget1.getId().toString()))
                                 .andExpect(jsonPath("$[1].id").value(budget2.getId().toString()))
-                                .andExpect(jsonPath("$[0].limitAmount").value(budget1.getAmount()))
-                                .andExpect(jsonPath("$[1].limitAmount").value(budget2.getAmount()))
+                                .andExpect(jsonPath("$[0].amount").value(budget1.getAmount()))
+                                .andExpect(jsonPath("$[1].amount").value(budget2.getAmount()))
                                 .andExpect(jsonPath("$[0].month").value(budget1.getMonth().toString()))
                                 .andExpect(jsonPath("$[1].month").value(budget2.getMonth().toString()));
         }
@@ -204,12 +208,11 @@ public class BudgetRestControllerIT {
         @Test
         void getAllUsersBudgets_withYearMonth() throws Exception {
                 mockMvc.perform(get("/api/budgets")
-                                .with(oauth2Login().oauth2User(principal()))
                                 .param("yearMonth", "2025-07"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.length()").value(1))
                                 .andExpect(jsonPath("$[0].id").value(budget2.getId().toString()))
-                                .andExpect(jsonPath("$[0].limitAmount").value(budget2.getAmount()))
+                                .andExpect(jsonPath("$[0].amount").value(budget2.getAmount()))
                                 .andExpect(jsonPath("$[0].month").value(budget2.getMonth().toString()));
         }
 
@@ -219,19 +222,17 @@ public class BudgetRestControllerIT {
         @Test
         void updateBudget_success() throws Exception {
                 mockMvc.perform(put("/api/budgets/" + budget2.getId().toString())
-                                .with(oauth2Login().oauth2User(principal()))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(updateRequest.formatted(category1.getId().toString())))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.categoryName").value(category1.getName()))
-                                .andExpect(jsonPath("$.limitAmount").value(777.00))
-                                .andExpect(jsonPath("$.month").value("2025-12"));
+                                .andExpect(jsonPath("$.amount").value(777.00))
+                                .andExpect(jsonPath("$.month").value("2026-02"));
         }
 
         @Test
         void updateBudget_budgetNotFound() throws Exception {
                 mockMvc.perform(put("/api/budgets/" + UUID.randomUUID().toString())
-                                .with(oauth2Login().oauth2User(principal()))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(updateRequest.formatted(category1.getId().toString())))
                                 .andExpect(status().isNotFound())
@@ -241,7 +242,6 @@ public class BudgetRestControllerIT {
         @Test
         void updateBudget_categoryNotFound() throws Exception {
                 mockMvc.perform(put("/api/budgets/" + budget2.getId().toString())
-                                .with(oauth2Login().oauth2User(principal()))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(updateRequest.formatted(UUID.randomUUID().toString())))
                                 .andExpect(status().isNotFound())
@@ -253,23 +253,15 @@ public class BudgetRestControllerIT {
         // ---------------------
         @Test
         void deleteBudget_success() throws Exception {
-                mockMvc.perform(delete("/api/budgets/" + budget1.getId().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(delete("/api/budgets/" + budget1.getId().toString()))
                                 .andExpect(status().isNoContent());
         }
 
         @Test
         void deleteBudget_notFound() throws Exception {
-                mockMvc.perform(delete("/api/budgets/" + UUID.randomUUID().toString())
-                                .with(oauth2Login().oauth2User(principal())))
+                mockMvc.perform(delete("/api/budgets/" + UUID.randomUUID().toString()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.code").value(404));
-        }
-
-        private CustomUserPrincipal principal() {
-                return new CustomUserPrincipal(user, Map.of(
-                                "sub", "test-sub",
-                                "email", "test@email.com"));
         }
 
 }
