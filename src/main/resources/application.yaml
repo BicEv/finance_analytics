@@ -34,7 +34,8 @@ spring:
               - user:email
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:P7D}          
+  expiration: ${JWT_EXPIRATION:P7D}    
+  issuer: ${JWT_ISSUER}      
 
 app:
   security:

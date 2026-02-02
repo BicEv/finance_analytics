@@ -21,18 +21,22 @@ public class JwtService {
 
     private final SecretKey key;
     private final Duration expiration;
+    private final String issuer;
 
     public JwtService(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") Duration expiration) {
+            @Value("${jwt.expiration}") Duration expiration,
+            @Value("${jwt.issuer}") String issuer) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expiration = expiration;
+        this.issuer = issuer;
     }
 
     public String generateToken(Long userId) {
         Instant now = Instant.now();
 
         return Jwts.builder()
+                .issuer(issuer)
                 .subject(userId.toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expiration)))
@@ -58,6 +62,7 @@ public class JwtService {
 
     private Jws<Claims> parse(String token) {
         return Jwts.parser()
+                .requireIssuer(issuer)
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token);
