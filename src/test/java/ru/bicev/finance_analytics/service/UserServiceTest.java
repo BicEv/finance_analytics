@@ -47,6 +47,7 @@ public class UserServiceTest {
     private String email;
     private String name;
     private String avatar;
+    private Map<String, Object> attrinbutes;
 
     @BeforeEach
     public void setUp() {
@@ -55,6 +56,11 @@ public class UserServiceTest {
         email = "test@email.com";
         name = "John Doe";
         avatar = "http://avatar.com/img.png";
+        attrinbutes = Map.of(
+                "sub", providerId,
+                "email", email,
+                "name", name,
+                "picture", avatar);
     }
 
     @AfterEach
@@ -67,9 +73,9 @@ public class UserServiceTest {
     // --------------------------------------------------------
     @Test
     void testGetOrCreateOAuthUser_Success() {
+        when(oAuth2User.getAttributes()).thenReturn(attrinbutes);
         when(userRepository.findByProviderAndProviderId(provider, providerId)).thenReturn(Optional.empty());
 
-        when(oAuth2User.getAttribute("sub")).thenReturn(providerId);
         when(oAuth2User.getAttribute("email")).thenReturn(email);
         when(oAuth2User.getAttribute("name")).thenReturn(name);
         when(oAuth2User.getAttribute("picture")).thenReturn(avatar);
@@ -103,7 +109,7 @@ public class UserServiceTest {
 
         LocalDateTime old = existing.getLastLoginAt();
 
-        when(oAuth2User.getAttribute("sub")).thenReturn(providerId);
+        when(oAuth2User.getAttributes()).thenReturn(attrinbutes);
         when(userRepository.findByProviderAndProviderId(provider, providerId)).thenReturn(Optional.of(existing));
         when(userRepository.save(existing)).thenReturn(existing);
 
@@ -119,12 +125,11 @@ public class UserServiceTest {
     }
 
     // --------------------------------------------------------
-    // getCurrentUser()
+    // getCurrentUserId()
     // --------------------------------------------------------
     @Test
-    void testGetCurrentUser_success() {
-        User user = User.builder().id(10L).email(email).build();
-        CustomUserPrincipal principal = new CustomUserPrincipal(user, Map.of());
+    void testGetCurrentUserId_success() {
+        CustomUserPrincipal principal = new CustomUserPrincipal(10L, Map.of());
 
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn(principal);
@@ -133,6 +138,28 @@ public class UserServiceTest {
         when(context.getAuthentication()).thenReturn(auth);
 
         SecurityContextHolder.setContext(context);
+
+        Long resultId = userService.getCurrentUserId();
+        assertEquals(principal.getUserId(), resultId);
+    }
+
+    // --------------------------------------------------------
+    // getCurrentUser()
+    // --------------------------------------------------------
+    @Test
+    void testGetCurrentUser_success() {
+        User user = User.builder().id(10L).email(email).build();
+        CustomUserPrincipal principal = new CustomUserPrincipal(user.getId(), Map.of());
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(principal);
+
+        SecurityContext context = mock(SecurityContext.class);
+        when(context.getAuthentication()).thenReturn(auth);
+
+        SecurityContextHolder.setContext(context);
+
+        when(userRepository.findById(principal.getUserId())).thenReturn(Optional.of(user));
 
         User result = userService.getCurrentUser();
 
