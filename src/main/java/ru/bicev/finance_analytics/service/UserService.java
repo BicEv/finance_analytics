@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ru.bicev.finance_analytics.entity.User;
+import ru.bicev.finance_analytics.exception.NotFoundException;
 import ru.bicev.finance_analytics.repo.UserRepository;
 import ru.bicev.finance_analytics.security.CustomUserPrincipal;
 
@@ -66,18 +67,33 @@ public class UserService {
     }
 
     /**
+     * Служебный метод возвращающий идентификатор текущего пользователя
+     * 
+     * @return идентификатор текущего пользователя
+     * @throws IllegalStateException если пользователь не аутентифицирован
+     */
+    public Long getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !(auth.getPrincipal() instanceof CustomUserPrincipal principal)) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        return principal.getUserId();
+    }
+
+    /**
      * Служебный метод, который возвращает текущего пользователя
      * 
      * @return текущий пользователь в системе
      * @throws IllegalStateException если текущий пользователь не аутентинфицирован
      */
     public User getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = getCurrentUserId();
 
-        if (auth == null || !(auth.getPrincipal() instanceof CustomUserPrincipal principal))
-            throw new IllegalStateException("Not authenticated");
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
-        return principal.getUser();
+        return user;
     }
 
     /**
