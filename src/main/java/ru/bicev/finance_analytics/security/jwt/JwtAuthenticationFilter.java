@@ -8,43 +8,50 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import ru.bicev.finance_analytics.repo.UserRepository;
 import ru.bicev.finance_analytics.security.CustomUserPrincipal;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-        this.userRepository = userRepository;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        SecurityContextHolder.clearContext();
+
         String token = extractTokenFromCookie(request);
 
-        if (token != null && jwtService.isValid(token)) {
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
             Long userId = jwtService.getUserId(token);
 
-            userRepository.findById(userId).ifPresent(user -> {
-                CustomUserPrincipal principal = new CustomUserPrincipal(user, Map.of());
+            if (userId != null) {
+
+                CustomUserPrincipal principal = new CustomUserPrincipal(userId, Map.of());
 
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         principal,
                         null,
                         principal.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
-            });
-            
+            }
+        } catch (JwtException e) {
+            // invalid token
         }
         filterChain.doFilter(request, response);
 
