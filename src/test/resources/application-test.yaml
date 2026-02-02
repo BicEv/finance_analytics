@@ -26,6 +26,5 @@ spring:
 jwt:
   secret: test-secret-test-secret-test-secret-test
   expiration: 1h
+  issuer: test-issuer
 
-dotenv:
-  enabled: false
