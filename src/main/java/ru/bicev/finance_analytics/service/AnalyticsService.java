@@ -292,7 +292,7 @@ public class AnalyticsService {
          * @return возвращает идентификатор текущего пользователя
          */
         private Long getCurrentUserId() {
-                return userService.getCurrentUser().getId();
+                return userService.getCurrentUserId();
         }
 
 }

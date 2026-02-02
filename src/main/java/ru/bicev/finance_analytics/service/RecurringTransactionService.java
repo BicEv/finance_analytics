@@ -225,7 +225,7 @@ public class RecurringTransactionService {
      * @return идетнификатор текущего пользователя
      */
     private Long getCurrentUserId() {
-        return userService.getCurrentUser().getId();
+        return userService.getCurrentUserId();
     }
 
     /**

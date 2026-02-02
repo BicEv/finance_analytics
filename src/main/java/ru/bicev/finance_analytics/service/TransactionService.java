@@ -197,7 +197,7 @@ public class TransactionService {
      * @return идентификатор пользователя
      */
     private Long getCurrentUserId() {
-        return userService.getCurrentUser().getId();
+        return userService.getCurrentUserId();
     }
 
     /**

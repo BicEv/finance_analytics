@@ -103,7 +103,7 @@ public class SqlAnalyticsService {
      * @return идентификатор текущего пользователя
      */
     private Long getCurrentUserId() {
-        return userService.getCurrentUser().getId();
+        return userService.getCurrentUserId();
     }
 
 }

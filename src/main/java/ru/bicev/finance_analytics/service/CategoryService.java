@@ -37,7 +37,8 @@ public class CategoryService {
     /**
      * Создает новую каетгорию для текущего пользователя
      * 
-     * @param request запрос, содержащий данные, необходимые для создания новой категории
+     * @param request запрос, содержащий данные, необходимые для создания новой
+     *                категории
      * @return дто, содержащее данные созданной категории
      */
     @Transactional
@@ -62,7 +63,7 @@ public class CategoryService {
      * @return список всех категорий текущего пользователя
      */
     public List<CategoryDto> getUserCategories() {
-        Long userId = getUserId();
+        Long userId = getCurrentUserId();
         logger.debug("getUserCategories() for user: {}", userId);
         return categoryRepository.findAllByUserId(userId)
                 .stream()
@@ -75,10 +76,11 @@ public class CategoryService {
      * 
      * @param categoryId идентификатор искомой категории
      * @return дто, содержащее данные найденной категории
-     * @throws NotFoundException если категории с таким идентификатором не существует
+     * @throws NotFoundException если категории с таким идентификатором не
+     *                           существует
      */
     public CategoryDto getCategoryById(UUID categoryId) {
-        Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
+        Category category = categoryRepository.findByIdAndUserId(categoryId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
         logger.debug("getCategoryById() with id: {}", categoryId);
         return toDto(category);
@@ -86,14 +88,16 @@ public class CategoryService {
 
     /**
      * Изменяет имя, тип, и цвет категории по ее идентификатору
+     * 
      * @param categoryId идентификатор категории, подлежащей изменению
-     * @param request запрос с данными для изменения категории
+     * @param request    запрос с данными для изменения категории
      * @return дто, содержащее данные измененной категории
-     * @throws NotFoundException если категории с таким идентификатором не существует
+     * @throws NotFoundException если категории с таким идентификатором не
+     *                           существует
      */
     @Transactional
     public CategoryDto updateCategory(UUID categoryId, CategoryRequest request) {
-        Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
+        Category category = categoryRepository.findByIdAndUserId(categoryId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
 
         category.setName(request.name());
@@ -105,12 +109,14 @@ public class CategoryService {
 
     /**
      * Удаляет категорию по ее идентификатору
+     * 
      * @param categoryId идентфикатор категории, подлежащей удалению
-     * @throws NotFoundException если категории с таким идентификатором не существует
+     * @throws NotFoundException если категории с таким идентификатором не
+     *                           существует
      */
     @Transactional
     public void deleteCategory(UUID categoryId) {
-        Category category = categoryRepository.findByIdAndUserId(categoryId, getUserId())
+        Category category = categoryRepository.findByIdAndUserId(categoryId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
         logger.debug("deleteCategory() with id: {}", categoryId);
         categoryRepository.delete(category);
@@ -118,35 +124,39 @@ public class CategoryService {
 
     /**
      * Возвращает все категории с указанным типом
+     * 
      * @param type тип искомых категорий
      * @return список всех категорий с указанным типом
      */
     public List<CategoryDto> getCategoriesByType(CategoryType type) {
-        return categoryRepository.findAllByUserIdAndType(getUserId(), type).stream()
+        return categoryRepository.findAllByUserIdAndType(getCurrentUserId(), type).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
     /**
      * Возвращает все категории для текущего пользователя
+     * 
      * @return список всех категорий для текущего пользователя
      */
     public List<CategoryDto> getAllCategoriesForUser() {
-        return categoryRepository.findAllByUserId(getUserId()).stream()
+        return categoryRepository.findAllByUserId(getCurrentUserId()).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
     /**
      * Служебный метод, возвращающий идентификатор текущего пользователя
+     * 
      * @return идентификатор текущего пользователя
      */
-    private Long getUserId() {
-        return getCurrentUser().getId();
+    private Long getCurrentUserId() {
+        return userService.getCurrentUserId();
     }
 
     /**
      * Служебный метод, возвращающий текущего пользователя
+     * 
      * @return текущий пользователь
      */
     private User getCurrentUser() {
@@ -155,6 +165,7 @@ public class CategoryService {
 
     /**
      * Служебный метод преобразующий категорию сущность в категорию дто
+     * 
      * @param category категория для преобразования
      * @return преобразованная категория дто
      */

@@ -83,7 +83,7 @@ public class BudgetService {
      *                           существует
      */
     public BudgetDto getBudgetById(UUID budgetId) {
-        Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
+        Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
         logger.debug("getBudget() withid: {}", budgetId.toString());
         return toDto(budget);
@@ -97,7 +97,7 @@ public class BudgetService {
     @Transactional(readOnly = true)
     public List<BudgetDto> getAllBudgetsForUser() {
         logger.debug("getAllBudgetsForUser()");
-        return budgetRepository.findAllByUserId(getCurrentUser().getId()).stream()
+        return budgetRepository.findAllByUserId(getCurrentUserId()).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
@@ -111,7 +111,7 @@ public class BudgetService {
     @Transactional(readOnly = true)
     public List<BudgetDto> getBudgetsForMonth(YearMonth month) {
         logger.debug("getBudgetsForMonth(): {}", month.toString());
-        return budgetRepository.findByUserIdAndMonth(getCurrentUser().getId(), month).stream()
+        return budgetRepository.findByUserIdAndMonth(getCurrentUserId(), month).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
@@ -170,7 +170,7 @@ public class BudgetService {
      */
     @Transactional
     public void deleteBudget(UUID budgetId) {
-        Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUser().getId())
+        Budget budget = budgetRepository.findByIdAndUserId(budgetId, getCurrentUserId())
                 .orElseThrow(() -> new NotFoundException("Budget not found"));
         logger.debug("deleteBudget() with id: {}", budgetId.toString());
         budgetRepository.delete(budget);
@@ -208,6 +208,15 @@ public class BudgetService {
      */
     private User getCurrentUser() {
         return userService.getCurrentUser();
+    }
+
+    /**
+     * Служебный метод, возвращающий идентификатор текущего пользователя
+     * 
+     * @return идентификатор пользователя
+     */
+    private Long getCurrentUserId() {
+        return userService.getCurrentUserId();
     }
 
     /**
