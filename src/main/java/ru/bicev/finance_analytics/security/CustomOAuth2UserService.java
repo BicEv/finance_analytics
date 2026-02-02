@@ -25,7 +25,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String provider = userRequest.getClientRegistration().getRegistrationId();
 
         User user = userService.getOrCreateOAuthUser(provider, oAuth2User);
-        return new CustomUserPrincipal(user, oAuth2User.getAttributes());
+        return new CustomUserPrincipal(user.getId(), oAuth2User.getAttributes());
     }
 
 }

@@ -28,7 +28,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     @Value("${app.security.secure-cookie}")
     private boolean isProd;
 
-    @Value("${app.frontend.redirect-url")
+    @Value("${app.frontend.redirect-url}")
     private String redirectUrl;
 
     public OAuth2AuthenticationSuccessHandler(
@@ -49,12 +49,12 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             User user = userService.getOrCreateOAuthUser(
                     ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId(),
                     oAuth2User);
-            principal = new CustomUserPrincipal(user, oAuth2User.getAttributes());
+            principal = new CustomUserPrincipal(user.getId(), oAuth2User.getAttributes());
         } else {
             throw new IllegalStateException("Unsupported principal type: " + principalObj.getClass());
         }
 
-        String jwt = jwtService.generateToken(principal.getUser().getId());
+        String jwt = jwtService.generateToken(principal.getUserId());
 
         ResponseCookie cookie = ResponseCookie.from("ACCESS_TOKEN", jwt)
                 .httpOnly(true)
