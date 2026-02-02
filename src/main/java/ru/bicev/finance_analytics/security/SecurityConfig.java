@@ -56,7 +56,7 @@ public class SecurityConfig {
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
-                                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(
                                                                 "/actuator/**",
@@ -72,7 +72,6 @@ public class SecurityConfig {
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                                 .logout(logout -> logout
                                                 .logoutUrl("/logout")
-                                                .logoutSuccessUrl("/")
                                                 .logoutSuccessHandler((req, res, auth) -> {
                                                         ResponseCookie cookie = ResponseCookie.from("ACCESS_TOKEN", "")
                                                                         .path("/")
