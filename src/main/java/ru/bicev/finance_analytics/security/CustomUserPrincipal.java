@@ -7,24 +7,19 @@ import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import ru.bicev.finance_analytics.entity.User;
 
 public class CustomUserPrincipal implements OAuth2User {
 
-    private final User user;
+    private final Long userId;
     private final Map<String, Object> attributes;
 
-    public CustomUserPrincipal(User user, Map<String, Object> attributes) {
-        this.user = user;
+    public CustomUserPrincipal(Long userId, Map<String, Object> attributes) {
+        this.userId = userId;
         this.attributes = attributes;
     }
 
-    public User getUser() {
-        return user;
-    }
-
     public Long getUserId() {
-        return user.getId();
+        return userId;
     }
 
     @Override
@@ -39,7 +34,7 @@ public class CustomUserPrincipal implements OAuth2User {
 
     @Override
     public String getName() {
-        return String.valueOf(user.getId());
+        return String.valueOf(userId);
     }
 
     @Override
