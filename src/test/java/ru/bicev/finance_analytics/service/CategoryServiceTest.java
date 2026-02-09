@@ -43,7 +43,8 @@ public class CategoryServiceTest {
                                 .email("test@mail.com")
                                 .build();
 
-                when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUserId()).thenReturn(user.getId());
         }
 
         // --------------------------------------------------------

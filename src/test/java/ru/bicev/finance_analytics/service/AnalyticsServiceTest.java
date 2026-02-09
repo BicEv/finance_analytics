@@ -177,7 +177,8 @@ public class AnalyticsServiceTest {
                                 .month(month)
                                 .build();
 
-                when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUserId()).thenReturn(10L);
         }
 
         @Test

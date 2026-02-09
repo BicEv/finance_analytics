@@ -51,6 +51,7 @@ public class TransactionServiceTest {
                 category = Category.builder().id(UUID.randomUUID()).user(user).name("Food").build();
 
                 lenient().when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUserId()).thenReturn(user.getId());
         }
 
         // --------------------------------------------------------

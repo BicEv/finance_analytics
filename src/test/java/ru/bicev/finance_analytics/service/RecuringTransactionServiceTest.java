@@ -32,7 +32,6 @@ public class RecuringTransactionServiceTest {
         @Mock
         private UserService userService;
 
-
         @Mock
         private CategoryRepository categoryRepository;
 
@@ -50,7 +49,8 @@ public class RecuringTransactionServiceTest {
                 user = User.builder().id(1L).email("test@mail.com").build();
                 category = Category.builder().id(UUID.randomUUID()).user(user).name("Food").build();
 
-                when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUser()).thenReturn(user);
+                lenient().when(userService.getCurrentUserId()).thenReturn(user.getId());
         }
 
         // --------------------------------------------------------
@@ -69,7 +69,6 @@ public class RecuringTransactionServiceTest {
                                 true // isActive
                 );
 
-                
                 when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
                                 .thenReturn(Optional.of(category));
                 when(recurringTransactionRepository.save(any()))
@@ -91,7 +90,6 @@ public class RecuringTransactionServiceTest {
                 assertEquals(category, saved.getCategory());
         }
 
-
         @Test
         void testCreateTransaction_categoryNotFound() {
                 RecurringTransactionRequest request = new RecurringTransactionRequest(
@@ -102,7 +100,6 @@ public class RecuringTransactionServiceTest {
                                 "Desc",
                                 true);
 
-                
                 when(categoryRepository.findByIdAndUserId(request.categoryId(), user.getId()))
                                 .thenReturn(Optional.empty());
 
@@ -120,7 +117,6 @@ public class RecuringTransactionServiceTest {
                                 "Desc",
                                 true);
 
-               
                 when(categoryRepository.findByIdAndUserId(category.getId(), user.getId()))
                                 .thenReturn(Optional.of(category));
 

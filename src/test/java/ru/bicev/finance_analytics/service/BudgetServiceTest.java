@@ -1,6 +1,7 @@
 package ru.bicev.finance_analytics.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,6 +62,7 @@ public class BudgetServiceTest {
                                 .user(user)
                                 .build();
 
+                lenient().when(userService.getCurrentUserId()).thenReturn(100L);
                 lenient().when(userService.getCurrentUser()).thenReturn(user);
         }
 

@@ -3,6 +3,7 @@ package ru.bicev.finance_analytics.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -87,7 +88,8 @@ public class BudgetTemplateServiceTest {
                 .build();
         request = new BudgetTemplateRequest(category.getId(), BigDecimal.valueOf(100.00), true, YearMonth.of(2025, 1));
         updateRequest = new BudgetTemplateUpdateRequest(null, BigDecimal.valueOf(200.00), true, YearMonth.of(2025, 5));
-
+        lenient().when(userService.getCurrentUserId()).thenReturn(user.getId());
+        lenient().when(userService.getCurrentUser()).thenReturn(user);
     }
 
     // ----------------------------------
@@ -95,7 +97,6 @@ public class BudgetTemplateServiceTest {
     // ----------------------------------
     @Test
     void testCreateBudgetTemplate_success() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(categoryRepository.findByIdAndUserId(category.getId(), user.getId())).thenReturn(Optional.of(category));
         when(repository.existsByUserIdAndCategoryId(user.getId(), category.getId())).thenReturn(false);
         when(repository.save(any(BudgetTemplate.class))).thenReturn(template1);
@@ -104,14 +105,13 @@ public class BudgetTemplateServiceTest {
 
         assertEquals(request.active(), result.active());
         assertEquals(request.amount(), result.amount());
-        assertEquals(request.startMonth().format(FORMAT), result.startMonth());
+        assertEquals(request.startMonth(), result.startMonth());
 
         verify(repository, times(1)).save(any(BudgetTemplate.class));
     }
 
     @Test
     void testCreateBudgetTemplate_categoryNotFound() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(categoryRepository.findByIdAndUserId(category.getId(), user.getId())).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> budgetTemplateService.createBudgetTemplate(request));
@@ -119,7 +119,6 @@ public class BudgetTemplateServiceTest {
 
     @Test
     void testCreateBudgetTemplate_templateExists() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(categoryRepository.findByIdAndUserId(category.getId(), user.getId())).thenReturn(Optional.of(category));
         when(repository.existsByUserIdAndCategoryId(user.getId(), category.getId())).thenReturn(true);
 
@@ -131,7 +130,6 @@ public class BudgetTemplateServiceTest {
     // ----------------------------------
     @Test
     void testDeleteBudgetTemplate_success() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findByIdAndUserId(template1.getId(), user.getId())).thenReturn(Optional.of(template1));
 
         budgetTemplateService.deleteBudgetTemplate(template1.getId());
@@ -142,7 +140,6 @@ public class BudgetTemplateServiceTest {
 
     @Test
     void testDeleteBudgetTemplate_templateNotFound() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findByIdAndUserId(template1.getId(), user.getId())).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> budgetTemplateService.deleteBudgetTemplate(template1.getId()));
@@ -153,7 +150,6 @@ public class BudgetTemplateServiceTest {
     // ----------------------------------
     @Test
     void testFindAllBudgetTemplatesForCurrentUser_success() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findAllByUserId(user.getId())).thenReturn(List.of(template1, template2));
 
         var result = budgetTemplateService.findAllBudgetTemplatesForCurrentUser();
@@ -165,7 +161,6 @@ public class BudgetTemplateServiceTest {
 
     @Test
     void testFindAllBudgetTemplatesForCurrentUser_noneFound() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findAllByUserId(user.getId())).thenReturn(List.of());
 
         var result = budgetTemplateService.findAllBudgetTemplatesForCurrentUser();
@@ -178,20 +173,18 @@ public class BudgetTemplateServiceTest {
     // ----------------------------------
     @Test
     void testGetBudgetTemplateById_success() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findByIdAndUserId(template1.getId(), user.getId())).thenReturn(Optional.of(template1));
 
         var result = budgetTemplateService.getBudgetTemplateById(template1.getId());
 
         assertEquals(template1.getAmount(), result.amount());
         assertEquals(template1.getId(), result.id());
-        assertEquals(template1.getStartMonth().format(FORMAT), result.startMonth());
+        assertEquals(template1.getStartMonth(), result.startMonth());
 
     }
 
     @Test
     void testGetBudgetTemplateById_templateNotFound() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findByIdAndUserId(template1.getId(), user.getId())).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> budgetTemplateService.deleteBudgetTemplate(template1.getId()));
@@ -202,7 +195,6 @@ public class BudgetTemplateServiceTest {
     // ----------------------------------
     @Test
     void testUpdateBudgetTemplate_success() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findByIdAndUserId(template1.getId(), user.getId())).thenReturn(Optional.of(template1));
         when(repository.save(any(BudgetTemplate.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -210,13 +202,12 @@ public class BudgetTemplateServiceTest {
         var result = budgetTemplateService.updateBudgetTemplate(template1.getId(), updateRequest);
 
         assertEquals(updateRequest.amount(), result.amount());
-        assertEquals(updateRequest.startMonth().format(FORMAT), result.startMonth());
+        assertEquals(updateRequest.startMonth(), result.startMonth());
         assertEquals(updateRequest.active(), result.active());
     }
 
     @Test
     void testUpdateBudgetTemplate_templateNotFound() {
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findByIdAndUserId(template1.getId(), user.getId())).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
@@ -226,7 +217,6 @@ public class BudgetTemplateServiceTest {
     @Test
     void testUpdateBudgetTemplate_categoryNotFound() {
         UUID categoryId = UUID.randomUUID();
-        when(userService.getCurrentUser()).thenReturn(user);
         when(repository.findByIdAndUserId(template1.getId(), user.getId())).thenReturn(Optional.of(template1));
         when(categoryRepository.findByIdAndUserId(categoryId, user.getId())).thenReturn(Optional.empty());
 
