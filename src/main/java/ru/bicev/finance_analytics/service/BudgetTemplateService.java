@@ -185,7 +185,7 @@ public class BudgetTemplateService {
                 budgetTemplate.getCategory().getName(),
                 budgetTemplate.getAmount(),
                 budgetTemplate.isActive(),
-                budgetTemplate.getStartMonth().format(FORMAT));
+                budgetTemplate.getStartMonth());
     }
 
 }
