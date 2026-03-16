@@ -19,16 +19,22 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "transactions", indexes = {
-    @Index(name="idx_tx_user_category_date",columnList = "user_id, category_id, date")
+        @Index(name = "idx_tx_user_category_date", columnList = "user_id, category_id, date")
 })
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = { "user", "category" })
 @Builder
 public class Transaction {
 

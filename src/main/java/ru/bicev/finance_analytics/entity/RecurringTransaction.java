@@ -21,22 +21,29 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import ru.bicev.finance_analytics.util.Frequency;
 
 @Entity
 @Table(name = "recurrings", indexes = {
-        @Index(name = "idx_rtr_user_category_nextExecution", columnList = "user_id, category_id, next_execution_date")
+        @Index(name = "idx_rtr_user_category_isActive_nextExecution", columnList = "user_id, category_id, is_active, next_execution_date")
 })
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = { "user", "category" })
 @Builder
 public class RecurringTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)

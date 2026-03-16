@@ -10,24 +10,25 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "app_user")
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_gen")
-    @SequenceGenerator(
-        name = "seq_gen",
-        sequenceName = "transaction_id_seq",
-        allocationSize = 50
-    )
+    @SequenceGenerator(name = "seq_gen", sequenceName = "transaction_id_seq", allocationSize = 50)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String provider;
