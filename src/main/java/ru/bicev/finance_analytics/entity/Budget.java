@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,10 +32,12 @@ public class Budget {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Category category;
 
     private YearMonth month;

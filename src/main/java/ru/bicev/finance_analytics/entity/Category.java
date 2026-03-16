@@ -3,6 +3,9 @@ package ru.bicev.finance_analytics.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -30,6 +33,7 @@ public class Category {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     private String name;
