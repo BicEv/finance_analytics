@@ -120,6 +120,24 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>properties-maven-plugin</artifactId>
+				<version>1.2.1</version>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<goals>
+							<goal>read-project-properties</goal>
+						</goals>
+						<configuration>
+							<files>
+								<file>${project.basedir}/.env</file>
+							</files>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
@@ -143,6 +161,40 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.jooq</groupId>
+				<artifactId>jooq-codegen-maven</artifactId>
+				<executions>
+					<execution>
+						<id>jooq-codegen</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<jdbc>
+								<driver>org.postgresql.Driver</driver>
+								<url>${DB_URL}</url>
+								<user>${DB_USERNAME}</user>
+								<password>${DB_PASSWORD}</password>
+							</jdbc>
+							<generator>
+								<database>
+									<name>org.jooq.meta.postgres.PostgresDatabase</name>
+									<includes>.*</includes>									<!-- Включаем все таблицы -->
+									<excludes></excludes>
+									<inputSchema>public</inputSchema>
+								</database>
+								<target>
+									<packageName>ru.bicev.finance_analytics.jooq</packageName>
+									<directory>target/generated-sources/jooq</directory>
+								</target>
+							</generator>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 
