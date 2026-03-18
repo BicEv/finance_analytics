@@ -138,11 +138,8 @@ public class AnalyticsService {
 
                 var dto = jooqRepo.getCategoryBudgetStatus(userId, budgetId).orElseThrow(
                                 () -> new NotFoundException("Budget not found for id: " + budgetId.toString()));
-                BigDecimal percentUsed = dto.spent()
-                                .divide(dto.limit())
-                                .multiply(BigDecimal.valueOf(100))
-                                .setScale(2, RoundingMode.HALF_UP);
-                return dto.withPercent(percentUsed);
+
+                return dto.normilize();
         }
 
         /**
