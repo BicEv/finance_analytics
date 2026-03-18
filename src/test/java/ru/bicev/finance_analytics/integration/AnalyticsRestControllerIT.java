@@ -26,6 +26,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
 import ru.bicev.finance_analytics.entity.Budget;
 import ru.bicev.finance_analytics.entity.Category;
 import ru.bicev.finance_analytics.entity.RecurringTransaction;
@@ -64,6 +65,9 @@ public class AnalyticsRestControllerIT {
         @Autowired
         RecurringTransactionRepository recurringTransactionRepository;
 
+        @Autowired
+        private EntityManager entityManager;
+
         private User user;
         private CustomUserPrincipal principal;
         private Category cat1;
@@ -81,7 +85,7 @@ public class AnalyticsRestControllerIT {
         private RecurringTransaction rtr4;
 
         private static final LocalDateTime NOW = LocalDateTime.of(2025, 12, 25, 10, 0);
-        public static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("MM.yyyy");
+        public static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("MM-yyyy");
 
         private String dateRange = """
                         {
@@ -147,6 +151,7 @@ public class AnalyticsRestControllerIT {
                 rtr4 = recurringTransactionRepository
                                 .save(TestUtil.generateRecurringTransaction(user, cat2, BigDecimal.valueOf(25.99), 2030,
                                                 2, 15));
+                entityManager.flush();
         }
 
         @AfterEach
@@ -281,9 +286,8 @@ public class AnalyticsRestControllerIT {
         @Test
         void getCategoryBudgetStatus_success() throws Exception {
                 BigDecimal percentUsed = tr3.getAmount()
-                                .divide(budget1.getAmount(), 2, RoundingMode.HALF_UP)
-                                .multiply(BigDecimal.valueOf(100))
-                                .setScale(2, RoundingMode.HALF_UP);
+                                .divide(budget1.getAmount())
+                                .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
                 mockMvc.perform(get("/api/analytics/budget/" + budget1.getId().toString()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.category").value(budget1.getCategory().getName()))
