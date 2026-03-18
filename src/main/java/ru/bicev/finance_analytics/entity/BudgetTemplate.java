@@ -59,6 +59,7 @@ public class BudgetTemplate {
     @Column(nullable = false)
     boolean active;
 
+    @Column(name = "startMonth", columnDefinition = "DATE")
     YearMonth startMonth;
 
 }

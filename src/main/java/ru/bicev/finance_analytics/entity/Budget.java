@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -53,6 +54,7 @@ public class Budget {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Category category;
 
+    @Column(name = "month", columnDefinition = "DATE")
     private YearMonth month;
 
     private BigDecimal amount;
