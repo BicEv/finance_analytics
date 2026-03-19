@@ -1,7 +1,5 @@
 package ru.bicev.finance_analytics.service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
