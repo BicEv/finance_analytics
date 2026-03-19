@@ -7,7 +7,6 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -21,18 +20,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import ru.bicev.finance_analytics.dto.CategoryBudgetStatusDto;
+import ru.bicev.finance_analytics.dto.CategoryExpenseDto;
+import ru.bicev.finance_analytics.dto.DailyExpenseDto;
 import ru.bicev.finance_analytics.dto.DateRange;
-import ru.bicev.finance_analytics.entity.Budget;
-import ru.bicev.finance_analytics.entity.Category;
-import ru.bicev.finance_analytics.entity.RecurringTransaction;
-import ru.bicev.finance_analytics.entity.Transaction;
+import ru.bicev.finance_analytics.dto.MonthlyExpenseDto;
+import ru.bicev.finance_analytics.dto.RecurringForecastDto;
+import ru.bicev.finance_analytics.dto.SummaryDto;
+import ru.bicev.finance_analytics.dto.TopCategoryDto;
 import ru.bicev.finance_analytics.entity.User;
 import ru.bicev.finance_analytics.exception.NotFoundException;
-import ru.bicev.finance_analytics.repo.BudgetRepository;
-import ru.bicev.finance_analytics.repo.RecurringTransactionRepository;
-import ru.bicev.finance_analytics.repo.TransactionRepository;
-import ru.bicev.finance_analytics.util.CategoryType;
-import ru.bicev.finance_analytics.util.Frequency;
+import ru.bicev.finance_analytics.repo.JooqAnalyticsRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class AnalyticsServiceTest {
@@ -41,141 +39,66 @@ public class AnalyticsServiceTest {
         private UserService userService;
 
         @Mock
-        private RecurringTransactionRepository recurringTransactionRepository;
-
-        @Mock
-        private TransactionRepository transactionRepository;
-
-        @Mock
-        private BudgetRepository budgetRepository;
+        private JooqAnalyticsRepository jooqRepo;
 
         @InjectMocks
         private AnalyticsService analyticsService;
 
         private Long userId;
-        private UUID expCategoryId1;
-        private UUID expCategoryId2;
-        private UUID incCategoryId;
         private UUID budgetId;
         private YearMonth month;
 
         private User user;
 
-        private Category catExpense1;
-        private Category catExpense2;
-        private Category catIncome;
-
-        private Transaction tr1;
-        private Transaction tr2;
-        private Transaction tr3;
-        private Transaction tr4;
-
-        private RecurringTransaction rtr1;
-        private RecurringTransaction rtr2;
-
-        private Budget b1;
+        private List<CategoryExpenseDto> categoryExpenseDtos;
+        private List<TopCategoryDto> topCategoryDtos;
+        private List<DailyExpenseDto> dailyExpenseDtos;
+        private List<MonthlyExpenseDto> monthlyExpenseDtos;
+        private SummaryDto summaryDto;
+        private CategoryBudgetStatusDto categoryBudgetStatusDto;
+        private List<RecurringForecastDto> recurringForecastDtos;
 
         @BeforeEach
         void setUp() {
                 userId = 10L;
-                expCategoryId1 = UUID.randomUUID();
-                expCategoryId2 = UUID.randomUUID();
-                incCategoryId = UUID.randomUUID();
+
                 budgetId = UUID.randomUUID();
-                month = YearMonth.of(2025, 10);
+
+                month = YearMonth.of(2025, 12);
+
+                categoryExpenseDtos = List.of(
+                                new CategoryExpenseDto("Food", BigDecimal.valueOf(12500)),
+                                new CategoryExpenseDto("Subscriptions", BigDecimal.valueOf(1500)));
+
+                topCategoryDtos = List.of(
+                                new TopCategoryDto("Food", BigDecimal.valueOf(12500)),
+                                new TopCategoryDto("Clothes", BigDecimal.valueOf(9000)));
+
+                dailyExpenseDtos = List.of(
+                                new DailyExpenseDto(LocalDate.of(2025, 12, 10), BigDecimal.valueOf(2200)),
+                                new DailyExpenseDto(LocalDate.of(2025, 12, 12), BigDecimal.valueOf(3300)),
+                                new DailyExpenseDto(LocalDate.of(2025, 12, 21), BigDecimal.valueOf(1700)));
+
+                monthlyExpenseDtos = List.of(
+                                new MonthlyExpenseDto("10-2025", BigDecimal.valueOf(25000)),
+                                new MonthlyExpenseDto("11-2025", BigDecimal.valueOf(25000)),
+                                new MonthlyExpenseDto("12-2025", BigDecimal.valueOf(25000)));
+
+                summaryDto = new SummaryDto(BigDecimal.valueOf(20000), BigDecimal.valueOf(17000),
+                                BigDecimal.valueOf(3000));
+
+                categoryBudgetStatusDto = new CategoryBudgetStatusDto(
+                                "Food",
+                                BigDecimal.valueOf(10000).setScale(2),
+                                BigDecimal.valueOf(7500).setScale(2),
+                                BigDecimal.valueOf(75).setScale(2));
+
+                recurringForecastDtos = List.of(
+                                new RecurringForecastDto("06-2030", BigDecimal.valueOf(1000)),
+                                new RecurringForecastDto("07-2030", BigDecimal.valueOf(1200)));
 
                 user = User.builder()
                                 .id(userId).email("test@email.com").name("John Doe").build();
-
-                catExpense1 = Category.builder()
-                                .id(expCategoryId1)
-                                .name("Food")
-                                .type(CategoryType.EXPENSE)
-                                .user(user)
-                                .build();
-
-                catExpense2 = Category.builder()
-                                .id(expCategoryId2)
-                                .name("Entertainment")
-                                .type(CategoryType.EXPENSE)
-                                .user(user)
-                                .build();
-
-                catIncome = Category.builder()
-                                .id(incCategoryId)
-                                .name("Salary")
-                                .type(CategoryType.INCOME)
-                                .user(user)
-                                .build();
-
-                tr1 = Transaction.builder()
-                                .id(UUID.randomUUID())
-                                .category(catExpense1)
-                                .date(LocalDate.of(2025, 10, 5))
-                                .description("Bread")
-                                .isPlanned(false)
-                                .user(user)
-                                .amount(BigDecimal.valueOf(30).setScale(2, RoundingMode.HALF_UP))
-                                .build();
-
-                tr2 = Transaction.builder()
-                                .id(UUID.randomUUID())
-                                .category(catExpense1)
-                                .date(LocalDate.of(2025, 10, 11))
-                                .description("Food supply")
-                                .isPlanned(false)
-                                .user(user)
-                                .amount(BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP))
-                                .build();
-
-                tr3 = Transaction.builder()
-                                .id(UUID.randomUUID())
-                                .category(catIncome)
-                                .date(LocalDate.of(2025, 10, 15))
-                                .description("Half of salary")
-                                .isPlanned(false)
-                                .user(user)
-                                .amount(BigDecimal.valueOf(1500).setScale(2, RoundingMode.HALF_UP))
-                                .build();
-
-                tr4 = Transaction.builder()
-                                .id(UUID.randomUUID())
-                                .category(catExpense2)
-                                .date(LocalDate.of(2025, 10, 22))
-                                .description("Game copy")
-                                .isPlanned(false)
-                                .user(user)
-                                .amount(BigDecimal.valueOf(60).setScale(2, RoundingMode.HALF_UP))
-                                .build();
-
-                rtr1 = RecurringTransaction.builder()
-                                .id(UUID.randomUUID())
-                                .category(catExpense2)
-                                .frequency(Frequency.MONTHLY)
-                                .nextExecutionDate(LocalDate.of(2025, 12, 25))
-                                .description("Netflix")
-                                .user(user)
-                                .amount(BigDecimal.valueOf(10).setScale(2, RoundingMode.HALF_UP))
-                                .isActive(true)
-                                .build();
-
-                rtr2 = RecurringTransaction.builder()
-                                .id(UUID.randomUUID())
-                                .category(catExpense2)
-                                .nextExecutionDate(LocalDate.of(2025, 12, 31))
-                                .description("Some subscription service")
-                                .user(user)
-                                .amount(BigDecimal.valueOf(7).setScale(2, RoundingMode.HALF_UP))
-                                .isActive(true)
-                                .build();
-
-                b1 = Budget.builder()
-                                .category(catExpense1)
-                                .id(budgetId)
-                                .amount(BigDecimal.valueOf(250).setScale(2, RoundingMode.HALF_UP))
-                                .user(user)
-                                .month(month)
-                                .build();
 
                 lenient().when(userService.getCurrentUser()).thenReturn(user);
                 lenient().when(userService.getCurrentUserId()).thenReturn(10L);
@@ -183,102 +106,108 @@ public class AnalyticsServiceTest {
 
         @Test
         void getExpensesByCategory() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
-                                CategoryType.EXPENSE, month.atDay(1),
-                                month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
+                when(jooqRepo.getExpensesByCategory(userId, month.atDay(1), month.atEndOfMonth()))
+                                .thenReturn(categoryExpenseDtos);
 
                 var result = analyticsService.getExpensesByCategory(month);
 
-                assertEquals(2, result.size());
-                assertEquals(tr1.getAmount().add(tr2.getAmount()), result.get(0).total());
-                assertEquals(tr4.getAmount(), result.get(1).total());
+                assertEquals(categoryExpenseDtos.size(), result.size());
+                assertEquals(categoryExpenseDtos.get(0).category(), result.get(0).category());
+                assertEquals(categoryExpenseDtos.get(1).category(), result.get(1).category());
+                assertEquals(categoryExpenseDtos.get(0).total(), result.get(0).total());
+                assertEquals(categoryExpenseDtos.get(1).total(), result.get(1).total());
 
         }
 
         @Test
         void testGetTopCategories() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
-                                CategoryType.EXPENSE, month.atDay(1),
-                                month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
+                when(jooqRepo.getTopCategories(userId, month.atDay(1), month.atEndOfMonth(), 2))
+                                .thenReturn(topCategoryDtos);
 
-                var result = analyticsService.getTopCategories(month, 3);
+                var result = analyticsService.getTopCategories(month, 2);
 
                 assertNotNull(result);
                 assertEquals(2, result.size());
-                assertEquals("Food", result.get(0).category());
-                assertEquals("Entertainment", result.get(1).category());
+                assertEquals(topCategoryDtos.get(0).category(), result.get(0).category());
+                assertEquals(topCategoryDtos.get(1).category(), result.get(1).category());
+                assertEquals(topCategoryDtos.get(0).total(), result.get(0).total());
+                assertEquals(topCategoryDtos.get(1).total(), result.get(1).total());
         }
 
         @Test
         void testGetDailyExpenses() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
-                                CategoryType.EXPENSE, month.atDay(1),
-                                month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
+                when(jooqRepo.getDailyExpenses(userId, month.atDay(1), month.atEndOfMonth()))
+                                .thenReturn(dailyExpenseDtos);
 
                 var result = analyticsService.getDailyExpenses(month);
 
                 assertNotNull(result);
-                assertEquals(tr1.getAmount(), result.get(0).amount());
-                assertEquals(tr2.getAmount(), result.get(1).amount());
-                assertEquals(tr4.getAmount(), result.get(2).amount());
+                assertEquals(dailyExpenseDtos.size(), result.size());
+                assertEquals(dailyExpenseDtos.get(0).date(), result.get(0).date());
+                assertEquals(dailyExpenseDtos.get(1).date(), result.get(1).date());
+                assertEquals(dailyExpenseDtos.get(2).date(), result.get(2).date());
+                assertEquals(dailyExpenseDtos.get(0).amount(), result.get(0).amount());
+                assertEquals(dailyExpenseDtos.get(1).amount(), result.get(1).amount());
+                assertEquals(dailyExpenseDtos.get(2).amount(), result.get(2).amount());
+
         }
 
         @Test
         void testGetMonthlyExpenses() {
-                when(transactionRepository.findAllByUserIdAndCategory_TypeAndDateBetween(userId,
-                                CategoryType.EXPENSE, month.atDay(1),
-                                month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr4));
+                LocalDate start = LocalDate.of(2025, 10, 1);
+                LocalDate end = LocalDate.of(2025, 12, 31);
+                when(jooqRepo.getMonthlyExpenses(userId, start, end))
+                                .thenReturn(monthlyExpenseDtos);
 
                 var result = analyticsService.getMonthlyExpenses(
-                                DateRange.ofMonth(month));
+                                new DateRange(start, end));
 
                 assertNotNull(result);
-                assertEquals(tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount()), result.get(0).total());
+                assertEquals(monthlyExpenseDtos.size(), result.size());
+                assertEquals(monthlyExpenseDtos.get(0).month(), result.get(0).month());
+                assertEquals(monthlyExpenseDtos.get(1).month(), result.get(1).month());
+                assertEquals(monthlyExpenseDtos.get(2).month(), result.get(2).month());
+                assertEquals(monthlyExpenseDtos.get(0).total(), result.get(0).total());
+                assertEquals(monthlyExpenseDtos.get(1).total(), result.get(1).total());
+                assertEquals(monthlyExpenseDtos.get(2).total(), result.get(2).total());
+        }
+
+        @Test
+        void testGetMonthlyExpenses_InvalidRange() {
+                assertThrows(IllegalStateException.class, () -> analyticsService.getMonthlyExpenses(
+                                new DateRange(LocalDate.of(2026, 3, 1), LocalDate.of(2025, 12, 31))));
         }
 
         @Test
         void testGetSummary() {
-                when(transactionRepository.findAllByUserIdAndDateBetween(userId, month.atDay(1),
-                                month.atEndOfMonth())).thenReturn(List.of(tr1, tr2, tr3, tr4));
-                when(budgetRepository.sumAmountByUserIdAndMonth(userId, month))
-                                .thenReturn(Optional.of(b1.getAmount()));
+                when(jooqRepo.getSummaryForMonth(userId, month.atDay(1), month.atDay(31))).thenReturn(summaryDto);
 
                 var result = analyticsService.getSummary(month);
-                BigDecimal income = b1.getAmount().add(tr3.getAmount());
-                BigDecimal expense = tr1.getAmount().add(tr2.getAmount()).add(tr4.getAmount());
 
                 assertNotNull(result);
-                assertEquals(income, result.income());
-                assertEquals(expense, result.expense());
-                assertEquals(income.subtract(expense),
-                                result.balance());
+                assertEquals(summaryDto.income(), result.income());
+                assertEquals(summaryDto.expense(), result.expense());
+                assertEquals(summaryDto.balance(), result.balance());
 
         }
 
         @Test
         void testGetCategoryBudgetStatus() {
-                lenient().when(budgetRepository.findByIdAndUserId(budgetId, userId)).thenReturn(Optional.of(b1));
-                when(transactionRepository.findAllByUserIdAndCategoryIdAndDateBetween(userId, catExpense1.getId(),
-                                month.atDay(1),
-                                month.atEndOfMonth())).thenReturn(List.of(tr1, tr2));
+                when(jooqRepo.getCategoryBudgetStatus(userId, budgetId))
+                                .thenReturn(Optional.of(categoryBudgetStatusDto));
 
                 var result = analyticsService.getCategoryBudgetStatus(budgetId);
 
                 assertNotNull(result);
-                assertEquals(b1.getCategory().getName(), result.category());
-                assertEquals(b1.getAmount(), result.limit());
-                assertEquals(tr1.getAmount().add(tr2.getAmount()), result.spent());
-                assertEquals(
-                                tr1.getAmount().add(tr2.getAmount())
-                                                .multiply(BigDecimal.valueOf(100).divide(b1.getAmount()))
-                                                .setScale(2, RoundingMode.HALF_UP),
-                                result.percentUsed());
+                assertEquals(categoryBudgetStatusDto.category(), result.category());
+                assertEquals(categoryBudgetStatusDto.limit(), result.limit());
+                assertEquals(categoryBudgetStatusDto.percentUsed(), result.percentUsed());
 
         }
 
         @Test
         void testGetCategoryBudgetStatus_budgetNotFound() {
-                when(budgetRepository.findByIdAndUserId(budgetId, userId))
+                when(jooqRepo.getCategoryBudgetStatus(userId, budgetId))
                                 .thenReturn(Optional.empty());
 
                 assertThrows(NotFoundException.class,
@@ -287,15 +216,15 @@ public class AnalyticsServiceTest {
 
         @Test
         void testGetUpcomingRecurringPayments() {
-                when(recurringTransactionRepository.findAllByUserIdAndIsActiveAndNextExecutionDateGreaterThanEqual(
-                                userId,
-                                true,
-                                LocalDate.now())).thenReturn(List.of(rtr1, rtr2));
+                when(jooqRepo.getUpcomingPayments(userId)).thenReturn(recurringForecastDtos);
 
                 var result = analyticsService.getUpcomingRecurringPayments();
 
                 assertNotNull(result);
-                assertEquals(rtr1.getAmount().add(rtr2.getAmount()), result.get(0).expectedAmount());
+                assertEquals(recurringForecastDtos.get(0).month(), result.get(0).month());
+                assertEquals(recurringForecastDtos.get(1).month(), result.get(1).month());
+                assertEquals(recurringForecastDtos.get(0).expectedAmount(), result.get(0).expectedAmount());
+                assertEquals(recurringForecastDtos.get(1).expectedAmount(), result.get(1).expectedAmount());
         }
 
 }
