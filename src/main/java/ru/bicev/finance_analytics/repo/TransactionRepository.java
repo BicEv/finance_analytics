@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import ru.bicev.finance_analytics.entity.Transaction;
@@ -12,6 +13,7 @@ import ru.bicev.finance_analytics.util.CategoryType;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
+        @EntityGraph(attributePaths = "category")
         List<Transaction> findAllByUserId(Long userId);
 
         List<Transaction> findAllByUserIdAndCategoryId(Long userId, UUID categoryId);

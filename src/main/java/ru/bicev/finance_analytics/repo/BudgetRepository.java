@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -13,6 +14,7 @@ import ru.bicev.finance_analytics.entity.Budget;
 
 public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
+    @EntityGraph(attributePaths = "category")
     List<Budget> findAllByUserId(Long userId);
 
     List<Budget> findByUserIdAndMonth(Long userId, YearMonth month);
