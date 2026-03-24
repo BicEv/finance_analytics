@@ -3,6 +3,7 @@ package ru.bicev.finance_analytics.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -30,6 +31,7 @@ import ru.bicev.finance_analytics.util.CategoryType;
 @Table(name = "categories", indexes = {
         @Index(name = "idx_cat_user_type", columnList = "user_id, type")
 })
+@BatchSize(size = 20)
 @Getter
 @Setter
 @NoArgsConstructor
